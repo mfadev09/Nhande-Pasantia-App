@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <title>Ñande Pasantía</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        
+        body { 
+            background-color: #e5e5e5; 
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .mobile-container {
+            width: 100%; 
+            max-width: 414px; 
+            height: 100vh; 
+            background-color: #ffffff; 
+            position: relative; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2); 
+            overflow: hidden;
+        }
+
+        /* --- ANIMACIONES --- */
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatPulse {
+            0% { transform: translateY(0); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+            50% { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(0,0,0,0.2); }
+            100% { transform: translateY(0); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        }
+
+        .anim-block { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.3s; }
+        .delay-3 { animation-delay: 0.5s; }
+        .delay-4 { animation-delay: 0.7s; }
+
+        /* --- PANTALLA 1: SPLASH INTRO --- */
+        #intro-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #4a5ae3 0%, #8e24aa 50%, #d4145a 100%);
+            z-index: 50; padding: 50px 30px; display: flex; flex-direction: column; color: white;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        #intro-screen.exit-anim { opacity: 0; transform: translateY(-50px) scale(0.98); pointer-events: none; }
+
+        .intro-logo { display: flex; align-items: center; margin-bottom: 50px; }
+        .intro-logo-icon { font-size: 45px; font-weight: 900; line-height: 1; margin-right: 8px; position: relative; }
+        .intro-logo-icon::before { content: "~"; position: absolute; top: -18px; left: 5px; font-size: 30px; color: #ffeb3b; }
+        .intro-logo-text { display: flex; flex-direction: column; line-height: 1; }
+        .intro-logo-text span:first-child { font-size: 12px; font-weight: 700; opacity: 0.9; letter-spacing: 1px; text-transform: uppercase; }
+        .intro-logo-text span:last-child { font-size: 20px; font-weight: 700; }
+
+        .intro-title { font-size: 32px; font-weight: 800; margin-bottom: 15px; line-height: 1.1; letter-spacing: -0.5px; }
+        .intro-subtitle { font-size: 24px; font-weight: 600; margin-bottom: 25px; line-height: 1.3; opacity: 0.95; color: #ffd6e7; }
+        .intro-desc { font-size: 16px; line-height: 1.6; font-weight: 400; color: rgba(255, 255, 255, 0.85); background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
+        .intro-highlight { color: #fff; font-weight: 700; border-bottom: 2px solid #d4145a; }
+
+        .intro-footer { margin-top: auto; display: flex; justify-content: center; padding-bottom: 20px; }
+        .btn-start { width: 80px; height: 80px; background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards, floatPulse 3s ease-in-out 1.6s infinite; opacity: 0; }
+        .btn-inner-circle { background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #d4145a; transition: transform 0.3s; }
+        .btn-start:active .btn-inner-circle { transform: scale(0.9); }
+        .arrow-icon { font-size: 24px; font-weight: 900; }
+
+        /* --- PANTALLA 2: REGISTRO (CON POSICIONAMIENTO ABSOLUTO) --- */
+        #main-interface { 
+            position: absolute; 
+            top: 0; 
+            left: 0;
+            z-index: 50; /* Para superponer a la intro */
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+            height: 100%; 
+            background-color: #ffffff; /* Asegura que cubra la intro */
+            opacity: 0; 
+            transform: scale(0.95); 
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); 
+            overflow-y: auto; 
+        }
+        #main-interface.enter-anim { opacity: 1; transform: scale(1); }
+
+        .header-bg { background: linear-gradient(90deg, #5b6cf9 0%, #a22fa6 50%, #d4145a 100%); min-height: 180px; width: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; padding-bottom: 20px; flex-shrink: 0; }
+        #home-screen .header-bg,
+        #calendar-screen .header-bg,
+        #profile-screen .header-bg { 
+            min-height: 100px; 
+        }
+        .header-title { color: white; text-align: right; font-size: 22px; font-weight: 700; line-height: 1.2; width: 70%; }
+        .logo-card { width: 110px; height: 110px; background-color: white; border-radius: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; justify-content: center; align-items: center; z-index: 10; margin-top: -30px; margin-left: 30px; margin-bottom: 10px; position: relative; flex-shrink: 0; }
+        .logo-content { display: flex; align-items: center; color: #8e24aa; }
+        .logo-n { font-size: 50px; font-weight: 900; line-height: 1; margin-right: -2px; position: relative; }
+        .logo-n::before { content: "~"; position: absolute; top: -15px; left: 5px; font-size: 30px; color: #d84315; }
+        .logo-text-group { display: flex; flex-direction: column; justify-content: center; }
+        .logo-text-small { font-size: 10px; font-weight: 700; color: #d84315; margin-bottom: -2px; }
+        .logo-text-main { font-size: 14px; font-weight: 700; color: #8e24aa; }
+
+        .form-body { flex: 1; padding: 10px 30px 30px 30px; display: flex; flex-direction: column; min-height: 300px; }
+        .step-section { display: none; flex-direction: column; height: 100%; }
+        /* Animación para los pasos normales (1 al 5) */
+        .step-section.active:not(#step-6) { display: flex; animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        /* Paso 6 (FINAL) - Antes era el 5 */
+        #step-6 { display: none; flex-direction: column; height: 100%; background: linear-gradient(180deg, #5b6cf9 0%, #a22fa6 50%, #d4145a 100%); position: absolute; top: 0; left: 0; width: 100%; padding: 50px 30px; color: white; z-index: 60; }
+        #step-6.active { display: flex; }
+        
+        .final-logo { display: flex; align-items: center; margin-bottom: 40px; color: white; }
+        .final-logo-icon { font-size: 45px; font-weight: 900; line-height: 1; margin-right: 8px; position: relative; }
+        .final-logo-icon::before { content: "~"; position: absolute; top: -18px; left: 5px; font-size: 30px; color: white; }
+        .final-logo-text span:first-child { font-size: 12px; font-weight: 700; opacity: 0.9; letter-spacing: 1px; text-transform: uppercase; }
+        .final-logo-text span:last-child { font-size: 20px; font-weight: 700; }
+        .final-title { font-size: 28px; font-weight: 800; margin-bottom: 20px; line-height: 1.2; }
+        .final-welcome { font-size: 24px; font-weight: 700; margin-bottom: 15px; line-height: 1.3; }
+        .final-desc { font-size: 16px; line-height: 1.5; opacity: 0.9; }
+        .btn-final { margin-top: auto; width: 100%; padding: 15px 0; border: none; border-radius: 50px; background-color: white; color: #d4145a; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .btn-final:active { transform: scale(0.98); }
+
+        /* --- PANTALLA 3, 4, 5: HOME DASHBOARD, CALENDAR, PROFILE --- */
+        #home-screen,
+        #calendar-screen,
+        #profile-screen { 
+            display: none; flex-direction: column; width: 100%; height: 100%;
+            background-color: #fff;
+            position: absolute; top: 0; left: 0; z-index: 100;
+        }
+        #home-screen.active, 
+        #calendar-screen.active,
+        #profile-screen.active { 
+             display: flex; animation: fadeInUp 0.6s ease; 
+        }
+        
+        .home-content { padding: 30px; flex: 1; }
+        .home-welcome-text { font-size: 24px; font-weight: 700; color: #333; margin-top: 30px; }
+        .home-stats-card {
+            background: linear-gradient(135deg, #a22fa6, #d4145a);
+            border-radius: 20px; padding: 25px; color: white; margin-top: 20px;
+            box-shadow: 0 10px 25px rgba(162, 47, 166, 0.3);
+        }
+        .stat-number { font-size: 42px; font-weight: 800; line-height: 1; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+
+        .btn-logout {
+            margin-top: auto; align-self: center; padding: 10px 20px;
+            border: 1px solid #d4145a; color: #d4145a; border-radius: 30px;
+            background: transparent; font-weight: 600; cursor: pointer; margin-bottom: 30px;
+        }
+
+        /* Inputs y Botones Generales */
+        .section-title { font-size: 20px; font-weight: 700; color: #000; margin-bottom: 10px; line-height: 1.2; }
+        .divider { height: 2px; background-color: #e0e0e0; width: 100%; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        .rounded-input { width: 100%; padding: 15px 20px; border-radius: 50px; border: 1px solid #707070; font-size: 14px; outline: none; transition: 0.3s; background: white; }
+        .rounded-input:focus { border-color: #5b6cf9; box-shadow: 0 0 0 3px rgba(91, 108, 249, 0.1); }
+        .btn-container { margin-top: auto; display: flex; justify-content: center; margin-bottom: 20px; padding-top: 20px; }
+        .btn-next { background-color: #7289da; color: white; border: none; border-radius: 50px; padding: 15px 0; width: 200px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 15px rgba(114, 137, 218, 0.4); transition: transform 0.1s; }
+        .btn-next:active { transform: scale(0.98); }
+
+        /* Toast & Picker */
+        .toast-notification { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: rgba(40,40,40,0.9); backdrop-filter: blur(10px); border-left: 4px solid #d4145a; color: white; padding: 12px 20px; border-radius: 12px; opacity: 0; transition: 0.5s; z-index: 200; width: 90%; max-width: 350px; }
+        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .date-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 500; display: none; justify-content: center; align-items: flex-end; backdrop-filter: blur(3px); }
+        .date-overlay.open .date-modal { transform: translateY(0); }
+        .date-modal { width: 100%; max-width: 414px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(20px); border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center; margin-bottom: 20px; }
+        .cal-day { height: 35px; width: 35px; display: flex; justify-content: center; align-items: center; border-radius: 50%; cursor: pointer; transition: 0.2s; }
+        .cal-day.selected { background: linear-gradient(135deg, #5b6cf9, #d4145a); color: white; font-weight: 700; }
+        .picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 700; font-size: 18px; }
+        .picker-actions { display: flex; gap: 15px; }
+        .btn-confirm { flex: 1; padding: 12px; border-radius: 30px; border: none; background: linear-gradient(90deg, #5b6cf9, #d4145a); color: white; font-weight: 600; cursor: pointer; }
+        .btn-cancel { flex: 1; padding: 12px; border-radius: 30px; border: 1px solid #ddd; background: transparent; cursor: pointer; }
+        
+        /* --- ESTILOS DEL PANEL PRINCIPAL (DASHBOARD) --- */
+
+        /* Tarjeta de Progreso (Violeta/Fucsia) */
+        .card-progress {
+            background: linear-gradient(135deg, #a22fa6 0%, #d4145a 100%);
+            border-radius: 20px; padding: 25px; color: white;
+            box-shadow: 0 10px 25px rgba(162, 47, 166, 0.3);
+            margin-bottom: 20px; position: relative; overflow: hidden;
+            min-height: 100px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        /* Decoración de círculo sutil */
+        .card-progress::after {
+            content: ""; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px;
+            background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;
+        }
+        .prog-number { font-size: 50px; font-weight: 800; line-height: 1; }
+        .prog-label { font-size: 14px; font-weight: 600; opacity: 0.9; margin-top: 5px; }
+
+        /* Tarjeta de Información (Gris) */
+        .card-info {
+            background-color: #f0f0f0; border-radius: 20px; padding: 20px 25px;
+            margin-bottom: 20px; color: #333; display: flex; flex-direction: column;
+        }
+        .info-val { font-size: 24px; font-weight: 800; color: #000; }
+        .info-lbl { font-size: 14px; font-weight: 600; color: #666; }
+
+        /* Botón "Agregar Registro" (Estilo Tarjeta) */
+        .btn-add {
+            width: 100%; padding: 20px 25px; border-radius: 20px; border: none;
+            background-color: #e0e0e0; color: #000; font-size: 18px; font-weight: 700;
+            text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: transform 0.2s;
+        }
+        .btn-add:active { transform: scale(0.98); }
+
+        /* Barra de Navegación (Glassmorphism) */
+        .bottom-nav {
+            position: absolute; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 280px; 
+            height: 70px; 
+            border-radius: 50px;
+            /* Efecto Vidrio */
+            background: rgba(255, 255, 255, 0.75); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 8px 30px rgba(212, 20, 90, 0.25);
+            /* === CAMBIO CLAVE: Ocultar por defecto === */
+            display: none; 
+            /* ======================================= */
+            justify-content: space-around; 
+            align-items: center;
+            padding: 0 10px; 
+            z-index: 200;
+        }
+
+        .nav-item {
+            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
+            border-radius: 50%; cursor: pointer; transition: 0.3s; position: relative;
+        }
+        .nav-icon { width: 24px; height: 24px; fill: #999; transition: 0.3s; }
+
+        /* Item Activo (Centro) con brillo */
+        .nav-item.active {
+            background: linear-gradient(135deg, #a22fa6, #d4145a);
+            box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);
+            transform: translateY(-5px);
+        }
+        .nav-item.active .nav-icon { fill: white; }
+
+        /* Modal para Nuevo Registro */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 400; display: none;
+            justify-content: center; align-items: flex-end; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open .modal-card { transform: translateY(0); }
+        .modal-card {
+            width: 100%; max-width: 414px; background: white; 
+            border-top-left-radius: 30px; border-top-right-radius: 30px;
+            padding: 30px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        /* --- ESTILO PARA LA NUEVA PANTALLA CALENDARIO --- */
+        .calendar-header-content { padding: 30px; margin-top: -10px; }
+        .calendar-header-content h1 { font-size: 26px; font-weight: 800; color: #000; line-height: 1.2; }
+
+        /* Estilo para el día que tiene registro (Trabajado) */
+        .cal-day.has-log {
+            background: #d4145a !important; /* Fucsia principal */
+            color: white !important;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(212, 20, 90, 0.4);
+            transform: scale(1.05);
+        }
+        .cal-day.has-log:hover {
+            background: #a22fa6 !important;
+        }
+
+        /* Estilo para la fecha del dashboard */
+        .date-display {
+            display: block; /* Para que ocupe su propia línea */
+            font-size: 14px;
+            font-weight: 500;
+            color: #8e24aa; /* Color que contrasta con el fondo y armoniza con la app */
+            margin-top: 5px;
+            margin-bottom: 15px; /* Separación de la tarjeta de progreso */
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="mobile-container">
+        
+        <section id="intro-screen">
+            <div class="intro-logo anim-block delay-1">
+                <div class="intro-logo-icon">Ñ</div>
+                <div class="intro-logo-text"><span>ande</span><span>Pasantía</span></div>
+            </div>
+            <div class="anim-block delay-2">
+                <h1 class="intro-title">Bienvenido a<br>Ñande Pasantía</h1>
+                <h2 class="intro-subtitle">Tu pasantía, a un<br>toque de distancia</h2>
+            </div>
+            <div class="intro-desc anim-block delay-3">
+                Olvídate de los registros manuales.<br><br>Con esta app, <span class="intro-highlight">organiza tus horarios</span>, reporta tu avance y celebra cada logro de forma simple y eficiente.
+            </div>
+            <div class="intro-footer">
+                <div class="btn-start anim-block delay-4" onclick="iniciarApp()">
+                    <div class="btn-inner-circle"><span class="arrow-icon">➜</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="main-interface" style="display: none;">
+            <header class="header-bg"><div class="header-title" id="header-text">Bienvenido a Ñande<br>Pasantia</div></header>
+            <div class="logo-card">
+                <div class="logo-content">
+                    <span class="logo-n">n</span>
+                    <div class="logo-text-group"><span class="logo-text-small">ande</span><span class="logo-text-main">Pasantía</span></div>
+                </div>
+            </div>
+
+            <main class="form-body">
+                <div class="step-section active" id="step-1">
+                    <h2 class="section-title">Completa tus datos<br>para empezar a usar</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="text" id="input-nombre" class="rounded-input" placeholder="Nombres"></div>
+                    <div class="input-group"><input type="text" id="input-apellido" class="rounded-input" placeholder="Apellidos"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(1)">Siguiente</button></div>
+                </div>
+                <div class="step-section" id="step-2">
+                    <h2 class="section-title">¿Cuando comenzaste o<br>comenzarás tu pasantía?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="text" id="input-fecha" class="rounded-input" placeholder="Seleccionar Fecha" readonly onclick="openDatePicker('input-fecha')"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(2)">Siguiente</button></div>
+                </div>
+                <div class="step-section" id="step-3">
+                    <h2 class="section-title">¿Cuantas horas son las<br>solicitadas?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="number" id="input-horas" class="rounded-input" placeholder="Inserta cantidad de horas"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(3)">Siguiente</button></div>
+                </div>
+                
+                <div class="step-section" id="step-4">
+                    <h2 class="section-title">¿Cuántas horas diarias<br>trabajarás?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="number" id="input-horas-diarias" class="rounded-input" placeholder="Ej: 4, 6, 8 horas"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(4)">Siguiente</button></div>
+                </div>
+
+                <div class="step-section" id="step-5">
+                    <h2 class="section-title">¿Cuales son los días<br>laborales?</h2>
+                    <div class="divider"></div>
+                    <div style="margin-bottom:20px">
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Lunes</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Martes</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Miércoles</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Jueves</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Viernes</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Sábado</label>
+                        <label style="display:block; margin:10px 0"><input type="checkbox" class="day-checkbox"> Domingo</label>
+                    </div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYFinalizar()">Siguiente</button></div>
+                </div>
+            </main>
+
+            <div class="step-section" id="step-6">
+                <div class="final-logo anim-block delay-1">
+                    <div class="final-logo-icon">Ñ</div>
+                    <div class="final-logo-text"><span>ande</span><span>Pasantía</span></div>
+                </div>
+                <h1 class="final-title anim-block delay-2">Proceso de registro<br>finalizado</h1>
+                <h2 class="final-welcome anim-block delay-3" id="final-welcome-msg">Bienvenido</h2>
+                <p class="final-desc anim-block delay-4">Puedes comenzar a usar la app sin problemas</p>
+                <div class="anim-block delay-4" style="margin-top: auto;">
+                    <button class="btn-final" onclick="guardarYEntrar()">Todo listo</button>
+                </div>
+            </div>
+        </section>
+     
+        <section id="home-screen">
+            <header class="header-bg">
+                <div class="header-title">Panel Principal</div>
+            </header>
+            
+            <div class="logo-card">
+                <div class="logo-content">
+                    <span class="logo-n">n</span>
+                    <div class="logo-text-group"><span class="logo-text-small">ande</span><span class="logo-text-main">Pasantía</span></div>
+                </div>
+            </div>
+            
+            <div class="form-body" style="padding-bottom: 120px;">
+                <div class="anim-block delay-1">
+                    <h1 class="welcome-title" id="dash-name">Hola, Usuario</h1>
+                    <p class="welcome-subtitle">Este es tu progreso actual</p>
+                    <span id="dash-date" class="date-display">Jueves, 4 de diciembre de 2025</span>
+                </div>
+
+                <div class="card-progress anim-block delay-2">
+                    <div class="prog-number">
+                        <span id="prog-current">0</span>/<span id="prog-total">0</span>
+                    </div>
+                    <div class="prog-label">Horas totales</div>
+                </div>
+
+                <div class="card-info anim-block delay-3">
+                    <div class="info-val"><span id="prog-daily">0</span>h</div>
+                    <div class="info-lbl">Max Diario</div>
+                </div>
+
+                <button class="btn-add anim-block delay-4" onclick="abrirModalRegistro()">
+                    <div style="display:flex; flex-direction:column; line-height:1.2">
+                        <span>Agregar nuevo</span>
+                        <span>registro</span>
+                    </div>
+                    <span style="font-size:30px; font-weight:400">+</span>
+                </button>
+            </div>
+            
+        </section>            
+
+        <section id="calendar-screen">
+            <header class="header-bg">
+                <div class="header-title">Calendario</div>
+            </header>
+            <div class="logo-card">
+                <div class="logo-content"><span class="logo-n">n</span><div class="logo-text-group"><span class="logo-text-small">ande</span><span class="logo-text-main">Pasantía</span></div></div>
+            </div>
+            
+            <div class="calendar-header-content">
+                <h1>Seguimiento de Progreso</h1>
+                <p style="color:#666; margin-top:10px;">Los días trabajados están marcados en rojo.</p>
+            </div>
+
+            <div style="padding: 0 30px 20px 30px;">
+                <div class="picker-header">
+                    <span onclick="changeMonth(-1, 'main')" style="cursor:pointer; color:#a22fa6; padding:0 10px">&#10094;</span>
+                    <span id="cal-title-view">Diciembre 2025</span>
+                    <span onclick="changeMonth(1, 'main')" style="cursor:pointer; color:#a22fa6; padding:0 10px">&#10095;</span>
+                </div>
+                
+                <div class="calendar-grid" id="mainCalendarGrid">
+                    </div>
+            </div>
+        </section>
+
+        <section id="profile-screen" style="display: none;">
+            <header class="header-bg">
+                <div class="header-title">Mi Perfil</div>
+            </header>
+            <div class="logo-card">
+                <div class="logo-content">
+                    <span class="logo-n">n</span>
+                    <div class="logo-text-group"><span class="logo-text-small">ande</span><span class="logo-text-main">Pasantía</span></div>
+                </div>
+            </div>
+            <div class="form-body">
+                <h2 class="section-title">Datos Personales</h2>
+                
+                <div class="card-info anim-block delay-1" style="margin-bottom: 10px;">
+                    <div class="info-val" id="profile-name-display">Nombre de Usuario</div>
+                    <div class="info-lbl">Nombre Completo</div>
+                </div>
+                
+                <div class="card-info anim-block delay-2" style="margin-bottom: 30px;">
+                    <div class="info-val" id="profile-startdate-display">01/01/2025</div>
+                    <div class="info-lbl">Fecha de Inicio</div>
+                </div>
+
+                <h2 class="section-title">Opciones de Cuenta</h2>
+                
+                <div class="btn-container" style="margin-top: 50px; padding-top: 0;">
+                    <button class="btn-next" onclick="logout()" style="background-color: #d4145a; box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <div class="modal-overlay" id="modal-registro">
+            <div class="modal-card">
+                <h3 style="font-size:20px; font-weight:700; margin-bottom:10px">Nuevo Registro</h3>
+                <p style="font-size:14px; color:#666; margin-bottom:20px">Completa el día trabajado.</p>
+                
+                <div class="input-group">
+                    <input type="text" id="rec-date" class="rounded-input" placeholder="Seleccionar Fecha" readonly onclick="openDatePicker('rec-date')">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="rec-hours" class="rounded-input" placeholder="Horas trabajadas">
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:20px">
+                    <button class="btn-next" style="background:#ddd; color:#333" onclick="cerrarModalRegistro()">Cancelar</button>
+                    <button class="btn-next" onclick="guardarRegistro()">Guardar</button>
+                </div>
+            </div>
+        </div>
+         
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="changeScreen('calendar-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            </div>
+            <div class="nav-item active" onclick="changeScreen('home-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </div>
+            <div class="nav-item" onclick="changeScreen('profile-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>    
+        </div> 
+       
+    </div>
+
+    <div id="toast" class="toast-notification"><span style="margin-right:10px">⚠️</span><span id="toast-message">Msg</span></div>
+    <div class="date-overlay" id="dateOverlay">
+        <div class="date-modal">
+            <div class="picker-header">
+                <span style="cursor:pointer; color:#a22fa6" onclick="changeMonth(-1)">&#10094;</span>
+                <span id="currentMonthYear">Diciembre 2025</span>
+                <span style="cursor:pointer; color:#a22fa6" onclick="changeMonth(1)">&#10095;</span>
+            </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+            <div class="picker-actions">
+                <button class="btn-cancel" onclick="closeDatePicker()">Cancelar</button>
+               <button class="btn-confirm" onclick="confirmDate()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="logout-modal">
+    <div class="modal-card" style="padding: 20px 30px; border-radius: 30px; transform: translateY(0); max-width: 350px;">
+        <h3 style="font-size:20px; font-weight:700; margin-bottom:10px; color: #d4145a;">Cerrar Sesión</h3>
+        <p style="font-size:14px; color:#666; margin-bottom:25px; line-height: 1.5;">
+            ¿Estás seguro que deseas cerrar la sesión? <br>Esto borrará todos tus datos de pasantía.
+        </p>
+        
+        <div style="display:flex; gap:15px;">
+            <button class="btn-cancel" onclick="cancelLogout()" style="flex:1; border: 1px solid #ddd;">
+                Cancelar
+            </button>
+            <button class="btn-next" onclick="confirmLogout()" style="flex:1; background-color: #d4145a; box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+       <script>
+        // --- LÓGICA DE APLICACIÓN ---
+        
+        // Variables Globales ÚNICAS (Estables)
+        let usuarioActual = null;
+        let tempDate = null; // Fecha temporal seleccionada en el modal
+        let inputDestino = null; // ID del input donde escribir la fecha
+        
+        // Fechas separadas para cada calendario
+        let calDateRegistro = new Date(); // Para el modal de selección de fecha
+        let calDatePrincipal = new Date(); // Para la pantalla de seguimiento (Calendario Principal)
+        
+        const mNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+        const dNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+        function getFormattedDate(date) {
+            const dayName = dNames[date.getDay()];
+            const day = date.getDate();
+            const monthName = mNames[date.getMonth()];
+            const year = date.getFullYear();
+            return `${dayName}, ${day} de ${monthName} de ${year}`;
+        }
+
+        // 1. CARGA INICIAL
+        window.onload = function() {
+            const stored = localStorage.getItem('nande_user_v2');
+            if(stored) {
+                try {
+                    usuarioActual = JSON.parse(stored);
+                    // Si existe usuario, saltar intro
+                    document.getElementById('intro-screen').style.display = 'none';
+                    mostrarDashboard();
+                } catch(e) { 
+                    console.error("Error al cargar datos de localStorage:", e);
+                    localStorage.removeItem('nande_user_v2'); 
+                }
+            }
+        };
+
+        // 2. NAVEGACIÓN INTRO -> REGISTRO
+        function iniciarApp() {
+            document.getElementById('intro-screen').classList.add('exit-anim');
+            const main = document.getElementById('main-interface');
+            main.style.display = 'flex';
+            setTimeout(() => main.classList.add('enter-anim'), 100);
+        }
+
+        // 3. PROCESO DE REGISTRO
+        function mostrarError(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function goToStep(n) {
+            document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-'+n).classList.add('active');
+        }
+
+        function validarYAvanzar(step) {
+            let val = false;
+            if(step===1) {
+                if(document.getElementById('input-nombre').value && document.getElementById('input-apellido').value) val=true;
+            } else if(step===2) {
+                if(document.getElementById('input-fecha').value) val=true;
+            } else if(step===3) {
+                // Validación para horas totales (debe ser un número positivo)
+                const horas = parseInt(document.getElementById('input-horas').value);
+                if(horas && horas > 0) val = true;
+            } else if(step===4) {
+                // Validación para horas diarias (debe ser un número positivo)
+                const horasDiarias = parseInt(document.getElementById('input-horas-diarias').value);
+                if(horasDiarias && horasDiarias > 0) val = true;
+            }
+            
+            if(val) goToStep(step+1);
+            else mostrarError("Completa el campo o ingresa un valor válido.");
+        }
+
+        function validarYFinalizar() {
+            let chk = false;
+            document.querySelectorAll('.day-checkbox').forEach(c => { if(c.checked) chk = true; });
+            if(!chk) { mostrarError("Elige al menos un día laboral."); return; }
+            
+            const n = document.getElementById('input-nombre').value;
+            const a = document.getElementById('input-apellido').value;
+            document.getElementById('final-welcome-msg').innerHTML = `Bienvenido ${n} ${a} a Ñande Pasantia`;
+            goToStep(6);
+        }
+
+        // 4. GUARDAR Y ENTRAR (CREAR USUARIO)
+        function guardarYEntrar() {
+            const nombre = document.getElementById('input-nombre').value;
+            const apellido = document.getElementById('input-apellido').value;
+            const fecha = document.getElementById('input-fecha').value;
+            const total = document.getElementById('input-horas').value;
+            const diario = document.getElementById('input-horas-diarias').value;
+            
+            usuarioActual = {
+                nombre: nombre,
+                apellido: apellido,
+                fechaInicio: fecha,
+                totalHours: parseInt(total),
+                dailyMax: parseInt(diario),
+                registros: [] // Array inicializado
+            };
+
+            localStorage.setItem('nande_user_v2', JSON.stringify(usuarioActual));
+            mostrarDashboard();
+            
+            document.getElementById('main-interface').style.display = 'none';
+        }
+
+        // 5. DASHBOARD Y FUNCIONALIDAD
+        function mostrarDashboard() {
+            const dash = document.getElementById('home-screen');
+            dash.style.display = 'flex';
+            dash.classList.add('active');
+            
+            // Actualizar fecha
+            const today = new Date();
+            document.getElementById('dash-date').innerText = getFormattedDate(today);
+
+            document.getElementById('dash-name').innerText = `Hola, ${usuarioActual.nombre}`;
+            document.getElementById('prog-total').innerText = usuarioActual.totalHours;
+            document.getElementById('prog-daily').innerText = usuarioActual.dailyMax;
+            
+            document.querySelector('.bottom-nav').style.display = 'flex'; 
+            
+            actualizarBarras();
+            changeScreen('home-screen'); // Asegura que la pantalla de inicio esté activa
+        }
+
+        function actualizarBarras() {
+            // Sumar horas del array
+            const suma = usuarioActual.registros ? usuarioActual.registros.reduce((acc, item) => acc + item.horas, 0) : 0;
+            document.getElementById('prog-current').innerText = suma;
+        }
+
+        function abrirModalRegistro() {
+            const m = document.getElementById('modal-registro');
+            m.style.display = 'flex';
+            setTimeout(()=>m.classList.add('open'), 10);
+            // Limpiar campos
+            document.getElementById('rec-date').value = '';
+            document.getElementById('rec-hours').value = '';
+        }
+
+        function cerrarModalRegistro() {
+            const m = document.getElementById('modal-registro');
+            m.classList.remove('open');
+            setTimeout(()=>m.style.display = 'none', 400);
+        }
+
+        function guardarRegistro() {
+            const fecha = document.getElementById('rec-date').value;
+            const horas = parseInt(document.getElementById('rec-hours').value);
+
+            // 1. Verificar campos vacíos
+            if (!fecha || !horas) { 
+                mostrarError("Faltan datos (Fecha y/o Horas)."); 
+                return; 
+            }
+            
+            // 2. Verificar si la fecha ya existe (REGLA DE REGISTRO ÚNICO)
+            const isAlreadyRegistered = usuarioActual.registros.some(log => log.fecha === fecha);
+
+            if (isAlreadyRegistered) {
+                mostrarError(`Ya existe un registro para la fecha ${fecha}. Solo se permite un registro por día.`);
+                return;
+            }
+            
+            // 3. Verificar límite de horas
+            if (horas > usuarioActual.dailyMax) { 
+                mostrarError(`Máximo ${usuarioActual.dailyMax} horas por día.`); 
+                return; 
+            }
+
+            // Si todas las validaciones pasan:
+            // Guardar en historial
+            if (!usuarioActual.registros) usuarioActual.registros = [];
+            usuarioActual.registros.push({ fecha: fecha, horas: horas });
+            localStorage.setItem('nande_user_v2', JSON.stringify(usuarioActual));
+            
+            actualizarBarras();
+            cerrarModalRegistro();
+            mostrarError("✅ Registro agregado con éxito.");
+        }
+
+   // FUNCIÓN INICIAL PARA ABRIR EL MODAL DE CONFIRMACIÓN
+function logout() {
+    const m = document.getElementById('logout-modal');
+    m.style.display = 'flex';
+    setTimeout(()=>m.classList.add('open'), 10);
+}
+
+// FUNCIÓN PARA CANCELAR EL CIERRE DE SESIÓN
+function cancelLogout() {
+    const m = document.getElementById('logout-modal');
+    m.classList.remove('open');
+    setTimeout(()=>m.style.display = 'none', 400);
+}
+
+// FUNCIÓN PARA CONFIRMAR Y EJECUTAR EL CIERRE DE SESIÓN
+function confirmLogout() {
+    // 1. Borrar el almacenamiento local
+    localStorage.removeItem('nande_user_v2');
+    
+    // 2. Recargar la aplicación para volver a la pantalla de introducción/registro
+    location.reload(); 
+}
+
+        // FUNCIÓN PARA RENDERIZAR DATOS DE PERFIL
+        function renderProfileScreen() {
+            if (usuarioActual) {
+                // Muestra Nombre y Apellido
+                document.getElementById('profile-name-display').innerText = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+                
+                // Muestra Fecha de Inicio
+                document.getElementById('profile-startdate-display').innerText = usuarioActual.fechaInicio;
+            }
+        }
+
+    // 6. NAVEGACIÓN ENTRE PESTAÑAS (CORREGIDA)
+function changeScreen(screenId) {
+    const screens = ['home-screen', 'calendar-screen', 'profile-screen'];
+    
+    // 1. Desactivar todas las pantallas y forzar ocultamiento
+    screens.forEach(id => {
+        const screen = document.getElementById(id);
+        if (screen) {
+            screen.classList.remove('active');
+            // Forzar ocultamiento inmediato al salir
+            screen.style.display = 'none'; 
+        }
+    });
+    
+    const targetScreen = document.getElementById(screenId);
+    
+    if (targetScreen) {
+        // 2. Mostrar la pantalla objetivo antes de la animación
+        targetScreen.style.display = 'flex';
+        // 3. Iniciar animación (añadiendo la clase 'active')
+        setTimeout(() => {
+            targetScreen.classList.add('active');
+        }, 10); // Un pequeño retraso para asegurar el inicio de la transición
+    }
+    
+    // 4. Actualiza el estado activo de los botones de navegación
+    document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
+    
+    if (screenId === 'home-screen') {
+        document.querySelector('.bottom-nav .nav-item:nth-child(2)').classList.add('active');
+    } else if (screenId === 'calendar-screen') {
+        document.querySelector('.bottom-nav .nav-item:nth-child(1)').classList.add('active');
+        renderCal('main'); // Dibuja el calendario principal
+    } else if (screenId === 'profile-screen') {
+        document.querySelector('.bottom-nav .nav-item:nth-child(3)').classList.add('active');
+        renderProfileScreen(); // Renderiza los datos de perfil
+    }
+
+    // Asegura que la barra sea visible
+    document.querySelector('.bottom-nav').style.display = 'flex'; 
+}
+
+        // 7. CALENDARIO LÓGICA (Unificada)
+        
+        function openDatePicker(idDelInput) {
+            inputDestino = idDelInput; 
+            document.getElementById('dateOverlay').style.display='flex'; 
+            setTimeout(()=>document.getElementById('dateOverlay').classList.add('open'),10); 
+            renderCal('modal'); // Renderiza el modal de selección
+        }
+        
+        function closeDatePicker() { 
+            document.getElementById('dateOverlay').classList.remove('open'); 
+            setTimeout(()=>document.getElementById('dateOverlay').style.display='none',400); 
+        }
+        
+        function confirmDate() { 
+            if(tempDate && inputDestino) {
+                const dia = tempDate.getDate().toString().padStart(2, '0');
+                const mes = (tempDate.getMonth()+1).toString().padStart(2, '0');
+                const anio = tempDate.getFullYear();
+                
+                document.getElementById(inputDestino).value = `${dia}/${mes}/${anio}`;
+                closeDatePicker();
+            } else {
+                mostrarError("Elige fecha");
+            }
+        }
+
+        function changeMonth(d, contexto) {
+            const dateObj = (contexto === 'main') ? calDatePrincipal : calDateRegistro;
+            dateObj.setMonth(dateObj.getMonth() + d);
+            renderCal(contexto);
+        }
+        
+        function renderCal(contexto) {
+            const date = (contexto === 'main') ? calDatePrincipal : calDateRegistro;
+            const gridId = (contexto === 'main') ? 'mainCalendarGrid' : 'calendarGrid';
+            const titleId = (contexto === 'main') ? 'cal-title-view' : 'currentMonthYear';
+
+            // 1. Actualizar título
+            document.getElementById(titleId).innerText = `${mNames[date.getMonth()]} ${date.getFullYear()}`;
+            
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+            
+            // 2. Días de la semana (D, L, M...)
+            ['D','L','M','M','J','V','S'].forEach(d=>{
+                const h=document.createElement('div'); h.innerText=d; h.style.fontSize='12px'; h.style.color='#8e24aa'; h.style.fontWeight='bold'; grid.appendChild(h);
+            });
+            
+            // 3. Días del mes: Setup
+            const y=date.getFullYear(), m=date.getMonth();
+            const first=new Date(y,m,1).getDay(), total=new Date(y,m+1,0).getDate();
+            for(let i=0;i<first;i++)grid.appendChild(document.createElement('div'));
+            
+            // --- LÓGICA DE VALIDACIÓN INICIAL (SEGURA) ---
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Normalizar hoy a medianoche
+
+            let fechaLimiteInferior = new Date(0); 
+
+            if (usuarioActual && usuarioActual.fechaInicio) {
+                const [diaInicio, mesInicio, anioInicio] = usuarioActual.fechaInicio.split('/').map(n => parseInt(n));
+                fechaLimiteInferior = new Date(anioInicio, mesInicio - 1, diaInicio);
+                fechaLimiteInferior.setHours(0, 0, 0, 0);
+            }
+            // ------------------------------------
+
+            for(let i=1;i<=total;i++){
+                const d=document.createElement('div'); d.className='cal-day'; d.innerText=i;
+                
+                const dia = String(i).padStart(2, '0');
+                const mes = String(m + 1).padStart(2, '0');
+                const fechaString = `${dia}/${mes}/${y}`;
+
+                const calendarDate = new Date(y, m, i); // Fecha que se está dibujando
+                calendarDate.setHours(0, 0, 0, 0); // Normalizar
+
+                let isFutureDay = false;
+                let isBeforeStart = false;
+                let isAlreadyRegistered = false; 
+                let isDateDisabled = false;
+
+                // Validaciones solo para el modal de selección de fecha (contexto !== 'main')
+                if (contexto !== 'main') {
+                    // 1. REGLA: No se puede registrar en el futuro
+                    if (calendarDate > today) {
+                        isFutureDay = true;
+                    }
+
+                    // 2. REGLA: No se puede registrar antes del inicio de la pasantía (Usa la variable segura)
+                    if (calendarDate < fechaLimiteInferior) {
+                        isBeforeStart = true;
+                    }
+                    
+                    // 3. REGLA: Solo un registro por día (verificación de historial)
+                    if (usuarioActual && usuarioActual.registros) {
+                        isAlreadyRegistered = usuarioActual.registros.some(log => log.fecha === fechaString);
+                    }
+                    
+                    isDateDisabled = isFutureDay || isBeforeStart || isAlreadyRegistered;
+                }
+                
+                // Aplicar estilo de deshabilitado si aplica alguna restricción
+                if (isDateDisabled) {
+                    d.style.opacity = 0.4;
+                    d.style.pointerEvents = 'none'; // Deshabilita el clic
+                }
+
+                // Marcar días trabajados en el calendario principal
+                if (contexto === 'main' && usuarioActual && usuarioActual.registros) {
+                    const trabajado = usuarioActual.registros.some(log => log.fecha === fechaString);
+                    if (trabajado) {
+                        d.classList.add('has-log');
+                    }
+                } 
+                
+                // Marcar día seleccionado en el modal
+                if (contexto !== 'main' && tempDate && tempDate.getDate()===i && tempDate.getMonth()===m) {
+                    d.classList.add('selected');
+                }
+                
+                // Solo el calendario modal (no el principal) debe tener evento onclick para selección
+                if (contexto !== 'main' && !isDateDisabled) {
+                     d.onclick=()=>{tempDate=new Date(y,m,i); renderCal(contexto);};
+                }
+                grid.appendChild(d);
+            }
+        }
+    </script>
+</body>
+</html>
