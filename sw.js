@@ -1,12 +1,12 @@
-// Nombre del caché. ¡Incrementa este número (v2, v3, etc.) 
-// cada vez que hagas cambios importantes en el HTML o en los assets!
-const CACHE_NAME = 'nande-pasantia-cache-v3'; 
+// Nombre del caché. Incrementa el número si has cambiado assets o el HTML.
+const CACHE_NAME = 'nande-pasantia-cache-v4'; 
+// Aseguramos que 'index.html' se llama correctamente en tu proyecto.
+const APP_SHELL = 'index (3).html'; // <-- Corregido para coincidir con tu nombre de archivo
 
-// Lista de archivos para cachear. Asumimos que todo (CSS/JS) está en index.html,
-// pero debemos incluir los recursos externos.
+// Lista de archivos para cachear.
 const urlsToCache = [
-    'index.html', // Tu archivo principal
-    '/', // Necesario para el root de la URL
+    APP_SHELL,
+    '/', 
     'logo_intro.png', 
     'logo_main.png', 
     'intro.mp4',
@@ -23,10 +23,12 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('Service Worker: Cacheando archivos estáticos');
-                return cache.addAll(urlsToCache);
-            })
-            .catch(err => {
-                console.error('Service Worker: Falló el cacheo de archivos. Verifica nombres y rutas.', err);
+                // Intentamos cachear todos los archivos. Si falla, al menos el archivo principal debe ser intentado.
+                return cache.addAll(urlsToCache).catch(error => {
+                    console.warn('Algunos archivos no se pudieron cachear (ej. el video o librerías externas que fallaron).', error);
+                    // Aseguramos que el shell (la interfaz principal) se cachee como fallback.
+                    return caches.open(CACHE_NAME).then(fallbackCache => fallbackCache.add(APP_SHELL));
+                });
             })
     );
 });
@@ -40,13 +42,13 @@ self.addEventListener('fetch', event => {
                 if (response) {
                     return response;
                 }
-                // Si no está en caché, va a la red
-                return fetch(event.request);
-            })
-            .catch(() => {
-                // Esto maneja el caso de URLs externas que fallan (ej: CDN offline)
-                // Si la red falla y no hay caché, puedes devolver una página de error si existiera.
-                return new Response('No se puede conectar. Intenta de nuevo cuando estés en línea.');
+
+                // Si la solicitud no está en caché (ej. una CDN), intentar la red.
+                return fetch(event.request).catch(() => {
+                    // Si la red falla (estamos offline), devolver el shell de la aplicación como fallback.
+                    // Esto asegura que la interfaz principal siempre cargue.
+                    return caches.match(APP_SHELL);
+                });
             })
     );
 });
@@ -63,6 +65,6 @@ self.addEventListener('activate', event => {
                     }
                 })
             );
-        })
+        }).then(() => self.clients.claim()) // Asegura que el SW tome control inmediatamente
     );
 });
