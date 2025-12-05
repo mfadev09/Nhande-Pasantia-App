@@ -1,0 +1,1769 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-content">
+    <title>Ñande Pasantía</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* --- CORRECCIÓN PANTALLA BLANCA --- */
+        html { background-color: #000000; }
+        
+        /* --- VARIABLES DE COLOR BASE --- */
+        :root {
+            /* Colores Claros (Light Mode) */
+            --bg-primary: #e5e5e5;
+            --bg-secondary: #ffffff;
+            --text-primary: #000000;
+            --text-secondary: #333333;
+            --input-bg: #ffffff;
+            --input-border: #707070;
+            --card-info-bg: #f0f0f0;
+            --card-info-lbl: #666;
+            --nav-bg: rgba(255, 255, 255, 0.75);
+            --toast-bg: rgba(40, 40, 40, 0.9);
+            --toast-color: #ffffff; 
+            
+            /* Variables de la tarjeta de días restantes (Modo Claro) */
+            --card-alert-bg: #ffe0b2; 
+            --card-alert-val: #d84315; 
+            --card-alert-lbl: #d84315; 
+        }
+
+        /* --- ESTILOS DEL MODO OSCURO (Dark Mode) --- */
+        .dark-mode {
+            /* Colores Oscuros (Dark Mode) */
+            --bg-primary: #121212; 
+            --bg-secondary: #1f1f1f; 
+            --text-primary: #ffffff;
+            --text-secondary: #e0e0e0;
+            --input-bg: #2b2b2b;
+            --input-border: #444444;
+            --card-info-bg: #2b2b2b;
+            --card-info-lbl: #aaaaaa;
+            --nav-bg: rgba(31, 31, 31, 0.75); 
+            --toast-bg: rgba(255, 255, 255, 0.9);
+            --toast-color: #000000; 
+
+            /* Colores para la tarjeta de alerta en Modo Oscuro */
+            --card-alert-bg: #4a148c; 
+            --card-alert-val: #ffc107; 
+            --card-alert-lbl: #e0e0e0; 
+        }
+        
+        /* --- ESTILOS GENERALES --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        
+        /* Eliminar destellos azules al tocar/enfocar */
+        * { -webkit-tap-highlight-color: transparent; }
+        button:focus, input:focus, .cal-day:focus, .btn-start:focus, .btn-next:focus, .btn-final:focus, .btn-add:focus, .nav-item:focus {
+            outline: none !important; 
+            box-shadow: none !important; 
+        }
+        button:active { background-color: inherit; border-color: inherit; }
+        
+        body { 
+            background-color: #000000; /* Fondo negro base */
+            display: flex; 
+            justify-content: center; 
+            align-items: flex-start; 
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        .mobile-container {
+            width: 100%; 
+            max-width: 414px; 
+            height: 100vh; 
+            background-color: var(--bg-secondary); 
+            position: relative; 
+            display: flex; 
+            flex-direction: column;
+            box-shadow: 0 0 30px rgba(0,0,0,0.2); 
+            overflow: hidden;
+        }
+
+        /* --- PANTALLA DE CARGA (VIDEO) --- */
+        #video-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000; /* Fondo negro estricto */
+            z-index: 9999; 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.6s ease-out; 
+        }
+
+        #intro-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; 
+            max-width: 414px; 
+            pointer-events: none; 
+            background-color: #000000; /* Fondo negro al video */
+            opacity: 0; 
+            transition: opacity 0.3s ease-in; 
+        }
+        
+        #intro-video.is-playing {
+            opacity: 1;
+        }
+
+        /* --- Ocultar controles nativos --- */
+        video::-webkit-media-controls { display:none !important; }
+        video::-webkit-media-controls-start-playback-button { display: none !important; }
+        video::-webkit-media-controls-overlay-play-button { display: none !important; }
+        video::-webkit-media-controls-enclosure { display: none !important; }
+
+        .loader-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* --- ANIMACIONES --- */
+        @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes floatPulse {
+            0% { transform: translateY(0); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+            50% { transform: translateY(-8px); box-shadow: 0 15px 25px rgba(0,0,0,0.2); }
+            100% { transform: translateY(0); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        }
+
+        .anim-block { opacity: 0; animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.3s; }
+        .delay-3 { animation-delay: 0.5s; }
+        .delay-4 { animation-delay: 0.7s; }
+        .delay-5 { animation-delay: 0.9s; } 
+
+        /* --- PANTALLA 1: SPLASH INTRO --- */
+        #intro-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(180deg, #4a5ae3 0%, #8e24aa 50%, #d4145a 100%);
+            z-index: 50; padding: 50px 30px; 
+            display: none; 
+            flex-direction: column; color: white;
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        #intro-screen.active {
+            display: flex;
+        }
+
+        #intro-screen.exit-anim { opacity: 0; transform: translateY(-50px) scale(0.98); pointer-events: none; }
+
+        .intro-logo { display: flex; align-items: center; margin-bottom: 25px; }
+        .intro-logo-img { 
+            max-width: 150px; 
+            height: auto; 
+            border-radius: 15px; 
+        } 
+
+        .intro-title { font-size: 32px; font-weight: 800; margin-bottom: 15px; line-height: 1.1; letter-spacing: -0.5px; }
+        .intro-subtitle { font-size: 24px; font-weight: 600; margin-bottom: 25px; line-height: 1.3; opacity: 0.95; color: #ffd6e7; }
+        .intro-desc { font-size: 16px; line-height: 1.6; font-weight: 400; color: rgba(255, 255, 255, 0.85); background: rgba(255, 255, 255, 0.1); padding: 20px; border-radius: 20px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
+        .intro-highlight { color: #fff; font-weight: 700; border-bottom: 2px solid #d4145a; }
+
+        .intro-footer { margin-top: auto; display: flex; justify-content: center; padding-bottom: 20px; }
+        .btn-start { width: 80px; height: 80px; background: rgba(255,255,255,0.15); backdrop-filter: blur(15px); border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid rgba(255,255,255,0.3); cursor: pointer; position: relative; animation: fadeInUp 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.8s forwards, floatPulse 3s ease-in-out 1.6s infinite; opacity: 0; }
+        .btn-inner-circle { background: white; width: 50px; height: 50px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #d4145a; transition: transform 0.3s; }
+        .btn-start:active .btn-inner-circle { transform: scale(0.9); }
+        .arrow-icon { font-size: 24px; font-weight: 900; }
+
+        /* --- PANTALLA 2: REGISTRO --- */
+        #main-interface { 
+            position: absolute; 
+            top: 0; 
+            left: 0;
+            z-index: 50; 
+            display: flex; 
+            flex-direction: column; 
+            width: 100%; 
+            height: 100%; 
+            background-color: var(--bg-secondary); 
+            opacity: 0; 
+            transform: scale(0.95); 
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.22, 1, 0.36, 1); 
+            overflow-y: auto; 
+        }
+        #main-interface.enter-anim { opacity: 1; transform: scale(1); }
+
+        .header-bg { background: linear-gradient(90deg, #5b6cf9 0%, #a22fa6 50%, #d4145a 100%); min-height: 160px; width: 100%; display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; padding-bottom: 0px; flex-shrink: 0; }
+        #home-screen .header-bg, #calendar-screen .header-bg, #profile-screen .header-bg { min-height: 100px; }
+        .header-title { color: white; text-align: right; font-size: 22px; font-weight: 700; line-height: 1.2; width: 70%; } 
+        
+        .logo-card { 
+            width: 110px; 
+            height: 110px; 
+            background-color: var(--bg-secondary); 
+            border-radius: 25px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 210; 
+            margin-top: -60px; 
+            margin-left: 30px; 
+            margin-bottom: 10px; 
+            position: relative; 
+            flex-shrink: 0; 
+            padding: 10px; 
+        }
+        .logo-content img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain; 
+            border-radius: 15px; 
+        }
+
+        .form-body { 
+            flex: 1; 
+            padding: 10px 30px 30px 30px; 
+            display: flex; 
+            flex-direction: column; 
+            min-height: 300px; 
+            overflow-y: auto; 
+        }
+        .step-section { display: none; flex-direction: column; height: 100%; }
+        .step-section.active:not(#step-6) { display: flex; animation: fadeInUp 0.5s cubic-bezier(0.22, 1, 0.36, 1); }
+
+        #step-6 { display: none; flex-direction: column; height: 100%; background: linear-gradient(180deg, #5b6cf9 0%, #a22fa6 50%, #d4145a 100%); position: absolute; top: 0; left: 0; width: 100%; padding: 50px 30px; color: white; z-index: 60; }
+        #step-6.active { display: flex; }
+        
+        .final-logo-container { display: flex; align-items: center; margin-bottom: 40px; color: white; max-width: 150px; border-radius: 15px; }
+
+        .final-title { font-size: 28px; font-weight: 800; margin-bottom: 20px; line-height: 1.2; }
+        .final-welcome { font-size: 24px; font-weight: 700; margin-bottom: 15px; line-height: 1.3; }
+        .final-desc { font-size: 16px; line-height: 1.5; opacity: 0.9; }
+        .btn-final { margin-top: auto; width: 100%; padding: 15px 0; border: none; border-radius: 50px; background-color: white; color: #d4145a; font-size: 18px; font-weight: 700; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); transition: transform 0.1s; }
+        .btn-final:active { transform: scale(0.98); }
+
+        /* --- PANTALLA 3, 4, 5: HOME DASHBOARD, CALENDAR, PROFILE --- */
+        #home-screen, #calendar-screen, #profile-screen { 
+            display: none; flex-direction: column; width: 100%; height: 100%;
+            background-color: var(--bg-secondary);
+            position: absolute; top: 0; left: 0; z-index: 100;
+        }
+        #home-screen.active, #calendar-screen.active, #profile-screen.active { 
+             display: flex; animation: fadeInUp 0.6s ease; 
+        }
+        
+        .home-content { padding: 30px; flex: 1; }
+        .welcome-title, .welcome-subtitle { color: var(--text-primary); } 
+        .home-welcome-text { font-size: 24px; font-weight: 700; color: var(--text-secondary); margin-top: 30px; }
+        .home-stats-card {
+            background: linear-gradient(135deg, #a22fa6, #d4145a);
+            border-radius: 20px; padding: 25px; color: white; margin-top: 20px;
+            box-shadow: 0 10px 25px rgba(162, 47, 166, 0.3);
+        }
+        .stat-number { font-size: 50px; font-weight: 800; line-height: 1; }
+        .stat-label { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+
+        .btn-logout { margin-top: auto; align-self: center; padding: 10px 20px; border: 1px solid #d4145a; color: #d4145a; border-radius: 30px; background: transparent; font-weight: 600; cursor: pointer; margin-bottom: 30px; }
+
+        /* Inputs y Botones Generales */
+        .section-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; line-height: 1.2; }
+        .divider { height: 2px; background-color: var(--input-border); width: 100%; margin-bottom: 30px; }
+        .input-group { margin-bottom: 20px; }
+        .rounded-input { 
+            width: 100%; padding: 15px 20px; border-radius: 50px; 
+            border: 1px solid var(--input-border); font-size: 14px; outline: none; transition: 0.3s; 
+            background: var(--input-bg); 
+            color: var(--text-secondary);
+        }
+        .rounded-input::placeholder { color: #888; }
+        .rounded-input:focus { border-color: #5b6cf9; box-shadow: 0 0 0 3px rgba(91, 108, 249, 0.1); }
+        .btn-container { margin-top: auto; display: flex; justify-content: center; margin-bottom: 20px; padding-top: 20px; }
+        .btn-next { background-color: #7289da; color: white; border: none; border-radius: 50px; padding: 15px 0; width: 200px; font-size: 18px; font-weight: 600; cursor: pointer; box-shadow: 0 5px 15px rgba(114, 137, 218, 0.4); transition: transform 0.1s; }
+        .btn-next:active { transform: scale(0.98); }
+
+        /* Toast & Picker */
+        .toast-notification { 
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%) translateY(100px); 
+            background: var(--toast-bg); 
+            backdrop-filter: blur(10px); 
+            border-left: 4px solid #d4145a; 
+            color: var(--toast-color); 
+            padding: 12px 20px; 
+            border-radius: 12px; 
+            opacity: 0; 
+            transition: 0.5s; 
+            z-index: 5000; 
+            width: 90%; 
+            max-width: 350px; 
+            display: flex; 
+            align-items: center;
+        }
+        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        
+        #toast-message {
+             color: var(--toast-color);
+        }
+
+        .toast-icon svg {
+            width: 20px;
+            height: 20px;
+            fill: #d4145a; 
+            margin-right: 10px;
+            flex-shrink: 0; 
+        }
+        
+        .date-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 500; display: none; justify-content: center; align-items: flex-end; backdrop-filter: blur(3px); }
+        .date-overlay.open .date-modal { transform: translateY(0); }
+        .date-modal { 
+            width: 100%; max-width: 414px; 
+            background: var(--bg-secondary); 
+            backdrop-filter: blur(20px); 
+            border-top-left-radius: 30px; border-top-right-radius: 30px; 
+            padding: 25px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); 
+            border-top: 1px solid var(--input-border);
+        }
+        
+        .modal-card {
+            width: 100%; max-width: 414px; background: var(--bg-secondary); 
+            border-top-left-radius: 30px; border-top-right-radius: 30px;
+            padding: 30px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            border-top: 1px solid var(--input-border);
+        }
+        .modal-card h3 { color: var(--text-primary); }
+        .modal-card p { color: var(--card-info-lbl); }
+
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; text-align: center; margin-bottom: 20px; }
+        .cal-day { height: 35px; width: 35px; display: flex; justify-content: center; align-items: center; border-radius: 50%; cursor: pointer; transition: 0.2s; color: var(--text-primary);}
+        .cal-day.selected { background: linear-gradient(135deg, #5b6cf9, #d4145a); color: white; font-weight: 700; }
+        .picker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 700; font-size: 18px; color: var(--text-primary); }
+        .picker-actions { display: flex; gap: 15px; }
+        .btn-confirm { flex: 1; padding: 12px; border-radius: 30px; border: none; background: linear-gradient(90deg, #5b6cf9, #d4145a); color: white; font-weight: 600; cursor: pointer; }
+        .btn-cancel { flex: 1; padding: 12px; border-radius: 30px; border: 1px solid #ddd; background: transparent; color: var(--text-secondary); cursor: pointer; }
+        
+        /* --- ESTILOS DEL PANEL PRINCIPAL (DASHBOARD) --- */
+        .card-progress {
+            background: linear-gradient(135deg, #a22fa6, #d4145a);
+            border-radius: 20px; 
+            padding: 35px; 
+            color: white;
+            box-shadow: 0 10px 25px rgba(162, 47, 166, 0.3);
+            margin-bottom: 20px; 
+            position: relative; 
+            overflow: hidden;
+            min-height: 140px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start; 
+            align-items: flex-start; 
+        }        
+        
+        .card-progress::after {
+            content: ""; position: absolute; top: -50%; right: -20%; width: 200px; height: 200px;
+            background: rgba(255,255,255,0.1); border-radius: 50%; pointer-events: none;
+        }
+        .prog-number { font-size: 45px; font-weight: 800; line-height: 1; }
+        .prog-label { font-size: 16px; font-weight: 600; opacity: 0.9; margin-top: 5px; }
+
+        /* Card Info styles (no changes needed) */
+        .card-info {
+            background-color: var(--card-info-bg);
+            border-radius: 20px; padding: 20px 25px;
+            margin-bottom: 20px; color: var(--text-secondary); 
+            display: flex; flex-direction: column;
+        }
+        .info-val { font-size: 24px; font-weight: 800; color: var(--text-primary); }
+        .info-lbl { font-size: 14px; font-weight: 600; color: var(--card-info-lbl); }
+
+        /* Button styles (no changes needed) */
+        .btn-add {
+            width: 100%; padding: 20px 25px; border-radius: 20px; border: none;
+            background: linear-gradient(90deg, #5b6cf9 0%, #d4145a 100%);
+            color: white; 
+            font-size: 18px; font-weight: 700;
+            text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+            transition: transform 0.2s;
+            box-shadow: 0 5px 15px rgba(212, 20, 90, 0.3);
+        }
+        .btn-add:active { transform: scale(0.98); }
+
+        /* Navigation Bar (no changes needed) */
+        .bottom-nav {
+            position: fixed; 
+            bottom: 30px; 
+            left: 50%; 
+            transform: translateX(-50%);
+            width: 280px; 
+            height: 70px; 
+            border-radius: 50px;
+            background: var(--nav-bg); 
+            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--input-border);
+            box-shadow: 0 8px 30px rgba(212, 20, 90, 0.25);
+            display: none; 
+            justify-content: space-around; 
+            align-items: center;
+            padding: 0 10px; 
+            z-index: 200;
+        }
+
+        .nav-item {
+            width: 50px; height: 50px; display: flex; justify-content: center; align-items: center;
+            border-radius: 50%; cursor: pointer; transition: 0.3s; position: relative;
+        }
+        .nav-icon { width: 24px; height: 24px; fill: var(--card-info-lbl); transition: 0.3s; }
+
+        .nav-item.active {
+            background: linear-gradient(135deg, #a22fa6, #d4145a);
+            box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);
+            transform: translateY(-5px);
+        }
+        .nav-item.active .nav-icon { fill: white; }
+
+        /* Modal styles (no changes needed) */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 400; display: none;
+            justify-content: center; align-items: flex-end; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.open .modal-card { transform: translateY(0); }
+        
+        /* Calendar styles (no changes needed) */
+        .calendar-header-content { padding: 30px; margin-top: -10px; }
+        .calendar-header-content h1 { font-size: 26px; font-weight: 800; color: var(--text-primary); line-height: 1.2; }
+        .calendar-header-content p { color: var(--card-info-lbl); }
+
+        .cal-day.has-log {
+            background: #d4145a !important; 
+            color: white !important;
+            font-weight: 700;
+            box-shadow: 0 0 10px rgba(212, 20, 90, 0.4);
+            transform: scale(1.05);
+        }
+        .cal-day.has-log:hover {
+            background: #a22fa6 !important;
+        }
+
+        .date-display {
+            display: block; 
+            font-size: 14px;
+            font-weight: 500;
+            color: #8e24aa; 
+            margin-top: 5px;
+            margin-bottom: 15px; 
+        }
+        
+        /* Log history styles (no changes needed) */
+        .log-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--input-border);
+        }
+        .log-date {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .log-hours {
+            font-size: 18px;
+            font-weight: 800;
+            color: #d4145a;
+        }
+        .btn-delete-log {
+            background: none;
+            border: none;
+            color: var(--card-info-lbl);
+            cursor: pointer;
+            padding: 5px;
+            transition: color 0.2s;
+        }
+        .btn-delete-log:hover {
+            color: #d4145a;
+        }
+
+        /* Dark Mode Toggle styles (no changes needed) */
+        .toggle-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--card-info-bg);
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .toggle-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 25px;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 25px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #d4145a; /* Fucsia */
+        }
+        input:checked + .slider:before {
+            transform: translateX(23px);
+        }
+        
+        /* Card Alert styles (no changes needed) */
+        .card-info[style*="ffe0b2"] {
+            background-color: var(--card-alert-bg) !important;
+        }
+
+        .card-info[style*="ffe0b2"] #prog-days-remaining { 
+            color: var(--card-alert-val) !important;
+        }
+        .card-info[style*="ffe0b2"] .info-lbl { 
+            color: var(--card-alert-lbl) !important;
+        }
+
+        /* Achievements styles (no changes needed) */
+        .achievements-container {
+            display: flex;
+            justify-content: space-around;
+            background-color: var(--card-info-bg);
+            border-radius: 20px;
+            padding: 15px;
+            margin-bottom: 20px;
+            margin-top: 10px;
+        }
+        .medal-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.3; 
+            filter: grayscale(100%);
+            transition: all 0.5s ease;
+            transform: scale(0.9);
+        }
+        .medal-item.unlocked {
+            opacity: 1;
+            filter: grayscale(0%);
+            transform: scale(1.1);
+        }
+        .medal-icon { font-size: 30px; margin-bottom: 5px; }
+        .medal-label { font-size: 10px; font-weight: 700; color: var(--text-secondary); text-align: center;}
+
+        /* --- CONTENEDOR DE LA HOJA A4 (OCULTO) --- */
+        /* Lo mantenemos solo para que html2pdf pueda darle formato */
+        #hidden-paper-a4 {
+            display: none;
+            background-color: white;
+            width: 210mm; 
+            min-height: 297mm; 
+            padding: 15px; 
+            color: black !important;
+            font-family: Arial, sans-serif;
+            box-sizing: content-box;
+        }
+        #hidden-paper-a4 h1 { font-size: 20px !important; margin: 0; }
+        #hidden-paper-a4 h2 { font-size: 14px !important; font-weight: 600 !important; margin: 2px 0; }
+        #hidden-paper-a4 p { font-size: 10px; line-height: 1.4; }
+        #hidden-paper-a4 .header-info-box { margin-bottom: 10px; font-size: 10px; }
+        #hidden-paper-a4 table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 5px; 
+        }
+        #hidden-paper-a4 th, #hidden-paper-a4 td {
+            border: 1px solid #ddd;
+            padding: 3px 5px; 
+            text-align: left;
+            font-size: 9px; 
+            line-height: 1.2;
+        }
+        #hidden-paper-a4 th { background-color: #f2f2f2; font-weight: bold; }
+        #hidden-paper-a4 .preview-signature-box { margin-top: 25px; display: flex; justify-content: space-between; }
+        #hidden-paper-a4 .preview-sign { border-top: 1px solid black; width: 45%; text-align: center; padding-top: 5px; font-size: 9px; }
+        
+        /* Forzar estilos internos de la hoja para que ignoren el modo oscuro de la app */
+        #hidden-paper-a4 h1, #hidden-paper-a4 h2, #hidden-paper-a4 p, #hidden-paper-a4 td, #hidden-paper-a4 th, #hidden-paper-a4 span {
+            color: black !important;
+        }
+
+        /* --- ESTILOS PARA IMPRESIÓN --- */
+        #print-area { display: none; }
+        @media print {
+            /* Ocultamos todo lo relacionado a la interfaz del móvil */
+            .mobile-container, #video-loader, .toast-notification, .bottom-nav, #modal-registro, #logout-modal { display: none !important; }
+            
+            /* El @page solo afecta a window.print(), pero lo dejamos para compatibilidad */
+            @page {
+                size: a4 portrait;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="video-loader">
+        <video id="intro-video" muted playsinline webkit-playsinline autoplay>
+            <source src="intro.mp4" type="video/mp4">
+        </video>
+    </div>
+
+    <div class="mobile-container">
+        
+        <section id="intro-screen">
+            <div class="intro-logo anim-block delay-1">
+                <img src="logo_intro.png" alt="Ñande Pasantía Logo">
+            </div>
+            <div class="anim-block delay-2">
+                <h1 class="intro-title">Bienvenido a<br>Ñande Pasantía</h1>
+                <h2 class="intro-subtitle">Tu pasantía, a un<br>toque de distancia</h2>
+            </div>
+            <div class="intro-desc anim-block delay-3">
+                Olvídate de los registros manuales.<br><br>Con esta app, <span class="intro-highlight">organiza tus horarios</span>, reporta tu avance y celebra cada logro de forma simple y eficiente.
+            </div>
+            <div class="intro-footer">
+                <div class="btn-start anim-block delay-4" onclick="iniciarApp()">
+                    <div class="btn-inner-circle"><span class="arrow-icon">➜</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="main-interface" style="display: none;">
+            <header class="header-bg"><div class="header-title" id="header-text">Bienvenido a Ñande<br>Pasantia</div></header>
+            
+            <div class="logo-card">
+                <div class="logo-content">
+                    <img src="logo_main.png" alt="Ñande Pasantía Logo">
+                </div>
+            </div>
+
+            <main class="form-body">
+                <div class="step-section active" id="step-1">
+                    <h2 class="section-title">Completa tus datos<br>para empezar a usar</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="text" id="input-nombre" class="rounded-input" placeholder="Nombres"></div>
+                    <div class="input-group"><input type="text" id="input-apellido" class="rounded-input" placeholder="Apellidos"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(1)">Siguiente</button></div>
+                </div>
+                <div class="step-section" id="step-2">
+                    <h2 class="section-title">¿Cuando comenzaste o<br>comenzarás tu pasantía?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="text" id="input-fecha" class="rounded-input" placeholder="Seleccionar Fecha" readonly onclick="openDatePicker('input-fecha')"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(2)">Siguiente</button></div>
+                </div>
+                <div class="step-section" id="step-3">
+                    <h2 class="section-title">¿Cuantas horas son las<br>solicitadas?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="number" id="input-horas" class="rounded-input" placeholder="Inserta cantidad de horas"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(3)">Siguiente</button></div>
+                </div>
+                
+                <div class="step-section" id="step-4">
+                    <h2 class="section-title">¿Cuántas horas diarias<br>trabajarás?</h2>
+                    <div class="divider"></div>
+                    <div class="input-group"><input type="number" id="input-horas-diarias" class="rounded-input" placeholder="Ej: 4, 6, 8 horas"></div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYAvanzar(4)">Siguiente</button></div>
+                </div>
+
+                <div class="step-section" id="step-5">
+                    <h2 class="section-title">¿Cuales son los días<br>laborales?</h2>
+                    <div class="divider"></div>
+                    <div style="margin-bottom:20px">
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="1"> Lunes</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="2"> Martes</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="3"> Miércoles</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="4"> Jueves</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="5"> Viernes</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="6"> Sábado</label>
+                        <label style="display:block; margin:10px 0; color:var(--text-secondary);"><input type="checkbox" class="day-checkbox" data-day="0"> Domingo</label>
+                    </div>
+                    <div class="btn-container"><button class="btn-next" onclick="validarYFinalizar()">Siguiente</button></div>
+                </div>
+            </main>
+
+            <div class="step-section" id="step-6">
+                <div class="final-logo-container anim-block delay-1">
+                    <img src="logo_intro.png" alt="Ñande Pasantía Logo">
+                </div>
+                <h1 class="final-title anim-block delay-2">Proceso de registro<br>finalizado</h1>
+                <h2 class="final-welcome anim-block delay-3" id="final-welcome-msg">Bienvenido</h2>
+                <p class="final-desc anim-block delay-4">Puedes comenzar a usar la app sin problemas</p>
+                <div class="anim-block delay-4" style="margin-top: auto;">
+                    <button class="btn-final" onclick="guardarYEntrar()">Todo listo</button>
+                </div>
+            </div>
+        </section>
+     
+        <section id="home-screen">
+            <header class="header-bg">
+                <div class="header-title">Panel Principal</div>
+            </header>
+            
+            <div class="logo-card">
+                <div class="logo-content">
+                    <img src="logo_main.png" alt="Ñande Pasantía Logo">
+                </div>
+            </div>
+            
+            <div class="form-body" style="padding-bottom: 120px;">
+                <div class="anim-block delay-1">
+                    <h1 class="welcome-title" id="dash-name">Hola, Usuario</h1>
+                    <p class="welcome-subtitle">Este es tu progreso actual</p>
+                    <span id="dash-date" class="date-display">Jueves, 4 de diciembre de 2025</span>
+                    
+                    <div class="achievements-container anim-block delay-2">
+                        <div class="medal-item" id="medal-bronze">
+                            <div class="medal-icon">🥉</div>
+                            <div class="medal-label">Inicio</div>
+                        </div>
+                        <div class="medal-item" id="medal-silver">
+                            <div class="medal-icon">🥈</div>
+                            <div class="medal-label">50%</div>
+                        </div>
+                        <div class="medal-item" id="medal-gold">
+                            <div class="medal-icon">🏆</div>
+                            <div class="medal-label">Meta</div>
+                        </div>
+                        <div class="medal-item" id="medal-star">
+                            <div class="medal-icon">⭐</div>
+                            <div class="medal-label">Constancia</div>
+                        </div>
+                    </div>
+                    </div>
+
+                <div class="card-progress anim-block delay-2">
+                    <div class="prog-number">
+                        <span id="prog-current">0</span>/<span id="prog-total">0</span>
+                    </div>
+                    <div class="prog-label">Horas totales</div>
+                </div>
+
+                <div class="card-info anim-block delay-3">
+                    <div class="info-val"><span id="prog-daily">0</span>h</div>
+                    <div class="info-lbl">Max Diario</div>
+                </div>
+
+                <button class="btn-add anim-block delay-4" onclick="abrirModalRegistro()">
+                    <div style="display:flex; flex-direction:column; line-height:1.2">
+                        <span>Agregar nuevo</span>
+                        <span>registro</span>
+                    </div>
+                    <span style="font-size:30px; font-weight:400">+</span>
+                </button>
+                
+                <div class="card-info anim-block delay-5" style="background-color: #ffe0b2; color: #d84315; margin-top: 30px;">
+                    <div class="info-val" id="prog-days-remaining">...</div>
+                    <div class="info-lbl" style="color:#d84315;">Días Aproximados Restantes</div>
+                    <div class="info-lbl" id="prog-finish-date" style="color:#d84315; font-weight: 700; margin-top: 5px;"></div>
+                </div>
+                <h2 class="section-title" style="margin-top: 30px;">Registros Recientes</h2>
+                <div id="recent-logs" style="margin-bottom: 30px;">
+                    <p style="color: var(--card-info-lbl);">No hay registros aún.</p>
+                </div>
+                </div>
+            
+        </section>            
+
+        <section id="calendar-screen">
+            <header class="header-bg">
+                <div class="header-title">Calendario</div>
+            </header>
+            <div class="logo-card">
+                <div class="logo-content">
+                    <img src="logo_main.png" alt="Ñande Pasantía Logo">
+                </div>
+            </div>
+            
+            <div class="calendar-header-content">
+                <h1>Seguimiento de Progreso</h1>
+                <p style="color:var(--card-info-lbl); margin-top:10px;">Los días trabajados están marcados en rojo.</p>
+            </div>
+
+            <div style="padding: 0 30px 20px 30px;">
+                <div class="picker-header">
+                    <span onclick="changeMonth(-1, 'main')" style="cursor:pointer; color:#a22fa6; padding:0 10px">&#10094;</span>
+                    <span id="cal-title-view">Diciembre 2025</span>
+                    <span onclick="changeMonth(1, 'main')" style="cursor:pointer; color:#a22fa6; padding:0 10px">&#10095;</span>
+                </div>
+                
+                <div class="calendar-grid" id="mainCalendarGrid">
+                    </div>
+            </div>
+        </section>
+
+        <section id="profile-screen" style="display: none;">
+            <header class="header-bg">
+                <div class="header-title">Mi Perfil</div>
+            </header>
+            <div class="logo-card">
+                <div class="logo-content">
+                    <img src="logo_main.png" alt="Ñande Pasantía Logo">
+                </div>
+            </div>
+            <div class="form-body" style="padding-bottom: 120px;"> 
+                
+                <h2 class="section-title">Opciones de Interfaz</h2>
+                
+                <div class="toggle-container anim-block delay-1">
+                    <span class="toggle-label">Modo Oscuro</span>
+                    <label class="switch">
+                        <input type="checkbox" id="darkModeToggle" onchange="toggleDarkMode()">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <h2 class="section-title">Datos Personales</h2>
+                
+                <div class="card-info anim-block delay-1" style="margin-bottom: 10px;">
+                    <div class="info-val" id="profile-name-display">Nombre de Usuario</div>
+                    <div class="info-lbl">Nombre Completo</div>
+                </div>
+                
+                <div class="card-info anim-block delay-2" style="margin-bottom: 30px;">
+                    <div class="info-val" id="profile-startdate-display">01/12/2025</div>
+                    <div class="info-lbl">Fecha de Inicio</div>
+                </div>
+
+                <h2 class="section-title">Configuración de Pasantía</h2>
+                
+                <div class="card-info anim-block delay-3" style="margin-bottom: 10px;">
+                    <div class="info-val" id="profile-hours-daily">0h</div>
+                    <div class="info-lbl">Horas Máximas Diarias</div>
+                </div>
+                
+                <div class="card-info anim-block delay-4" style="margin-bottom: 30px;">
+                    <div class="info-val" id="profile-working-days">Lunes, Martes, Miércoles</div>
+                    <div class="info-lbl">Días Laborales</div>
+                </div>
+
+                <h2 class="section-title">Gestión de Datos</h2>
+
+                <div class="btn-add anim-block delay-5" onclick="imprimirFinal()" style="background: #a22fa6; color: white; margin-bottom: 15px; box-shadow: 0 5px 15px rgba(162, 47, 166, 0.3);">
+                    <div style="display:flex; flex-direction:column; line-height:1.2">
+                        <span>Generar Informe</span>
+                        <span style="font-size:12px; font-weight:400">Descargar PDF</span>
+                    </div>
+                    <svg style="fill:white; width:24px; height:24px;" viewBox="0 0 24 24"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-4-9H6v4h12V3z"/></svg>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-bottom:30px;" class="anim-block delay-5">
+                    <button onclick="exportarDatos()" class="btn-next" style="width:100%; font-size:14px; background-color:#333;">☁️ Exportar</button>
+                    <button onclick="document.getElementById('file-input').click()" class="btn-next" style="width:100%; font-size:14px; background-color:#555;">📥 Importar</button>
+                    <input type="file" id="file-input" style="display: none;" accept=".json" onchange="importarDatos(this)">
+                </div>
+                <h2 class="section-title">Opciones de Cuenta</h2>
+                
+                <div class="btn-container" style="margin-top: 50px; padding-top: 0;">
+                    <button class="btn-next" onclick="logout()" style="background-color: #d4145a; box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);">
+                        Cerrar Sesión
+                    </button>
+                </div>
+            </div>
+        </section>
+        
+        <div class="modal-overlay" id="modal-registro">
+            <div class="modal-card">
+                <h3 style="font-size:20px; font-weight:700; margin-bottom:10px">Nuevo Registro</h3>
+                <p style="font-size:14px; color:var(--card-info-lbl); margin-bottom:20px">Completa el día trabajado.</p>
+                
+                <div class="input-group">
+                    <input type="text" id="rec-date" class="rounded-input" placeholder="Seleccionar Fecha" readonly onclick="openDatePicker('rec-date')">
+                </div>
+                <div class="input-group">
+                    <input type="number" id="rec-hours" class="rounded-input" placeholder="Horas trabajadas">
+                </div>
+                
+                <div style="display:flex; gap:10px; margin-top:20px">
+                    <button class="btn-next" style="background:#ddd; color:#333" onclick="cerrarModalRegistro()">Cancelar</button>
+                    <button class="btn-next" onclick="guardarRegistro()">Guardar</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="changeScreen('calendar-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>
+            </div>
+            <div class="nav-item active" onclick="changeScreen('home-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+            </div>
+            <div class="nav-item" onclick="changeScreen('profile-screen')">
+                <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+            </div>    
+        </div> 
+       
+    </div>
+
+    <div id="toast" class="toast-notification">
+        <span class="toast-icon">
+            <svg viewBox="0 0 24 24">
+                <path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/>
+            </svg>
+        </span>
+        <span id="toast-message">Mensaje de Error/Éxito</span>
+    </div>
+
+    <div class="date-overlay" id="dateOverlay">
+        <div class="date-modal">
+            <div class="picker-header">
+                <span style="cursor:pointer; color:#a22fa6" onclick="changeMonth(-1)">&#10094;</span>
+                <span id="currentMonthYear">Diciembre 2025</span>
+                <span style="cursor:pointer; color:#a22fa6" onclick="changeMonth(1)">&#10095;</span>
+            </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+            <div class="picker-actions">
+                <button class="btn-cancel" onclick="closeDatePicker()">Cancelar</button>
+               <button class="btn-confirm" onclick="confirmDate()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="logout-modal">
+    <div class="modal-card" style="padding: 20px 30px; border-radius: 30px; transform: translateY(0); max-width: 350px;">
+        <h3 style="font-size:20px; font-weight:700; color: #d4145a; margin-bottom:10px;">Cerrar Sesión</h3>
+        <p style="font-size:14px; color:var(--card-info-lbl); margin-bottom:25px; line-height: 1.5;">
+            ¿Estás seguro que deseas cerrar la sesión? <br>Esto borrará todos tus datos de pasantía.
+        </p>
+        
+        <div style="display:flex; gap:15px;">
+            <button class="btn-cancel" onclick="cancelLogout()" style="flex:1; border: 1px solid var(--input-border); color:var(--text-secondary);">
+                Cancelar
+            </button>
+            <button class="btn-next" onclick="confirmLogout()" style="flex:1; background-color: #d4145a; box-shadow: 0 5px 15px rgba(212, 20, 90, 0.4);">
+                Confirmar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="hidden-paper-a4">
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+       <script>
+        // --- LÓGICA DE APLICACIÓN ---
+        
+        // Variables Globales ÚNICAS (Estables)
+        let usuarioActual = null;
+        let tempDate = null; 
+        let inputDestino = null; 
+        
+        let calDateRegistro = new Date(); 
+        let calDatePrincipal = new Date(); 
+        
+        const mNames = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+        const dNames = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+        function getFormattedDate(date) {
+            const dayName = dNames[date.getDay()];
+            const day = date.getDate();
+            const monthName = mNames[date.getMonth()];
+            const year = date.getFullYear();
+            return `${dayName}, ${day} de ${monthName} de ${year}`;
+        }
+        
+        // Función para guardar los datos de usuario en localStorage
+        function saveUser() {
+            localStorage.setItem('nande_user_v2', JSON.stringify(usuarioActual));
+        }
+
+        // --- LÓGICA DE MODO OSCURO ---
+
+        // 1. Aplicar el modo oscuro al cargar la página
+        function applyDarkMode() {
+            const isDark = localStorage.getItem('nande_dark_mode') === 'true';
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                const toggle = document.getElementById('darkModeToggle');
+                if (toggle) {
+                    toggle.checked = true;
+                }
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+
+        // 2. Función que se llama al usar el interruptor
+        function toggleDarkMode() {
+            const isDark = document.body.classList.toggle('dark-mode');
+            localStorage.setItem('nande_dark_mode', isDark);
+            mostrarError(`Modo ${isDark ? 'Oscuro' : 'Claro'} activado.`);
+        }
+
+        // 1. CARGA INICIAL
+        window.onload = function() {
+            applyDarkMode(); 
+
+            const loader = document.getElementById('video-loader');
+            const video = document.getElementById('intro-video');
+
+            // --- DETERMINAR QUÉ PANTALLA MOSTRAR DETRÁS DEL VIDEO ---
+            const stored = localStorage.getItem('nande_user_v2');
+            let userExists = false;
+
+            if(stored) {
+                try {
+                    usuarioActual = JSON.parse(stored);
+                    if (!usuarioActual.registros) usuarioActual.registros = [];
+                    userExists = true;
+                    // Si existe usuario, activamos el Dashboard (oculto visualmente por el loader)
+                    mostrarDashboard(); 
+                } catch(e) { 
+                    console.error("Error al cargar datos:", e);
+                    localStorage.removeItem('nande_user_v2'); 
+                }
+            }
+
+            if (!userExists) {
+                // Si NO existe usuario, activamos la pantalla de intro
+                document.getElementById('intro-screen').classList.add('active');
+            }
+            // --------------------------------------------------------
+
+            function cerrarLoader() {
+                loader.classList.add('loader-hidden');
+                
+                // Esperar a que termine la transición CSS (0.6s) para quitarlo del DOM
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 600);
+            }
+
+            // Manejo del video con lógica "invisible hasta reproducir"
+            if (video) {
+                
+                // Cuando el navegador CONFIRMA que el video ya corre, lo hacemos visible
+                video.addEventListener('playing', () => {
+                    video.classList.add('is-playing');
+                });
+
+                video.onended = function() {
+                    cerrarLoader();
+                };
+
+                // Forzar reproducción
+                video.play().catch(e => {
+                    console.log("Autoplay bloqueado, iniciando app directo.");
+                    // Si falla, el video sigue invisible (opacity 0) y cerramos el loader
+                    cerrarLoader();
+                });
+            } else {
+                cerrarLoader();
+            }
+            
+            // Seguridad: Si el video dura más de 4 seg o falla, entrar forzoso
+            setTimeout(() => {
+                if (!loader.classList.contains('loader-hidden')) {
+                    cerrarLoader();
+                }
+            }, 4000); 
+        };
+
+        // 2. NAVEGACIÓN INTRO -> REGISTRO
+        function iniciarApp() {
+            const intro = document.getElementById('intro-screen');
+            intro.classList.add('exit-anim');
+            
+            // Limpieza
+            setTimeout(()=> intro.classList.remove('active'), 600);
+
+            const main = document.getElementById('main-interface');
+            main.style.display = 'flex';
+            setTimeout(() => main.classList.add('enter-anim'), 100);
+        }
+
+        // 3. PROCESO DE REGISTRO
+        function mostrarError(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-message').innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function goToStep(n) {
+            document.querySelectorAll('.step-section').forEach(s => s.classList.remove('active'));
+            document.getElementById('step-'+n).classList.add('active');
+            
+            // Ocultar el logo-card superpuesto en el paso 6 (registro finalizado)
+            const logoCard = document.querySelector('.logo-card');
+            if (n === 6) {
+                logoCard.style.display = 'none';
+            } else {
+                logoCard.style.display = 'flex';
+            }
+        }
+
+        function validarYAvanzar(step) {
+            let val = false;
+            if(step===1) {
+                if(document.getElementById('input-nombre').value && document.getElementById('input-apellido').value) val=true;
+            } else if(step===2) {
+                if(document.getElementById('input-fecha').value) val=true;
+            } else if(step===3) {
+                const horas = parseInt(document.getElementById('input-horas').value);
+                if(horas && horas > 0) val = true;
+            } else if(step===4) {
+                const horasDiarias = parseInt(document.getElementById('input-horas-diarias').value);
+                if(horasDiarias && horasDiarias > 0) val = true;
+            }
+            
+            if(val) goToStep(step+1);
+            else mostrarError("Completa el campo o ingresa un valor válido.");
+        }
+
+        function validarYFinalizar() {
+            let chk = false;
+            document.querySelectorAll('.day-checkbox').forEach(c => { if(c.checked) chk = true; });
+            if(!chk) { mostrarError("Elige al menos un día laboral."); return; }
+            
+            const n = document.getElementById('input-nombre').value;
+            const a = document.getElementById('input-apellido').value;
+            document.getElementById('final-welcome-msg').innerHTML = `Bienvenido ${n} ${a} a Ñande Pasantia`;
+            goToStep(6);
+        }
+
+        // 4. GUARDAR Y ENTRAR (CREAR USUARIO)
+        function guardarYEntrar() {
+            const nombre = document.getElementById('input-nombre').value;
+            const apellido = document.getElementById('input-apellido').value;
+            const fecha = document.getElementById('input-fecha').value;
+            const total = document.getElementById('input-horas').value;
+            const diario = document.getElementById('input-horas-diarias').value;
+            
+            // Guardar días laborales
+            const diasLaborales = [];
+            document.querySelectorAll('.day-checkbox:checked').forEach(c => {
+                diasLaborales.push(parseInt(c.getAttribute('data-day')));
+            });
+
+            usuarioActual = {
+                nombre: nombre,
+                apellido: apellido,
+                fechaInicio: fecha,
+                totalHours: parseInt(total),
+                dailyMax: parseInt(diario),
+                diasLaborales: diasLaborales, 
+                registros: [] 
+            };
+
+            saveUser();
+            mostrarDashboard();
+            
+            document.getElementById('main-interface').style.display = 'none';
+        }
+
+        // 5. DASHBOARD Y FUNCIONALIDAD
+        function mostrarDashboard() {
+            const dash = document.getElementById('home-screen');
+            dash.style.display = 'flex';
+            dash.classList.add('active');
+            
+            const today = new Date();
+            document.getElementById('dash-date').innerText = getFormattedDate(today);
+
+            document.getElementById('dash-name').innerText = `Hola, ${usuarioActual.nombre}`;
+            document.getElementById('prog-total').innerText = usuarioActual.totalHours;
+            document.getElementById('prog-daily').innerText = usuarioActual.dailyMax;
+            
+            document.querySelector('.bottom-nav').style.display = 'flex'; 
+            
+            actualizarBarras();
+            changeScreen('home-screen'); 
+        }
+
+        // --- FUNCIONES DE CÁLCULO Y RENDERIZADO DEL DASHBOARD ---
+
+        function actualizarBarras() {
+            const suma = usuarioActual.registros ? usuarioActual.registros.reduce((acc, item) => acc + item.horas, 0) : 0;
+            document.getElementById('prog-current').innerText = suma;
+            
+            calcularDiasRestantes(suma); 
+            renderRecentLogs(); 
+            
+            // --- NUEVO: LLAMADA A LOGROS ---
+            checkAchievements();
+        }
+      
+        function calcularDiasRestantes(horasRegistradas) {
+            if (!usuarioActual) return;
+            
+            const totalHours = usuarioActual.totalHours;
+            const dailyMax = usuarioActual.dailyMax;
+            const daysRemainingElement = document.getElementById('prog-days-remaining');
+            const finishDateElement = document.getElementById('prog-finish-date');
+
+            const horasFaltantes = totalHours - horasRegistradas;
+
+            if (horasFaltantes <= 0) {
+                daysRemainingElement.innerText = '✅ 0';
+                finishDateElement.innerText = '¡Meta Alcanzada!';
+                return;
+            }
+
+            if (dailyMax <= 0 || usuarioActual.diasLaborales.length === 0) {
+                daysRemainingElement.innerText = 'N/A';
+                finishDateElement.innerText = 'Faltan datos de trabajo.';
+                return;
+            }
+
+            let diasContados = 0;
+            let fechaProyectada = new Date();
+            
+            // Calculo simple de días totales requeridos
+            const diasTotalesRequeridos = Math.ceil(horasFaltantes / dailyMax);
+            
+            let diasLaboralesRestantes = 0;
+            
+            fechaProyectada = new Date();
+            fechaProyectada.setHours(0, 0, 0, 0); 
+            
+            // Bucle para encontrar la fecha exacta de finalización
+            while (diasLaboralesRestantes < diasTotalesRequeridos) {
+                fechaProyectada.setDate(fechaProyectada.getDate() + 1); 
+                const dayOfWeek = fechaProyectada.getDay();
+                
+                if (usuarioActual.diasLaborales.includes(dayOfWeek)) {
+                    diasLaboralesRestantes++;
+                }
+            }
+
+            const diaFin = fechaProyectada.getDate();
+            const mesFin = mNames[fechaProyectada.getMonth()];
+            const anioFin = fechaProyectada.getFullYear();
+            
+            daysRemainingElement.innerText = diasTotalesRequeridos.toLocaleString('es-ES');
+            finishDateElement.innerText = `Proyección: ${diaFin} de ${mesFin} de ${anioFin}`;
+        }
+
+        function renderRecentLogs() {
+            const logContainer = document.getElementById('recent-logs');
+            if (!usuarioActual.registros || usuarioActual.registros.length === 0) {
+                logContainer.innerHTML = '<p style="color: var(--card-info-lbl);">No hay registros aún.</p>';
+                return;
+            }
+
+            // Ordenar por fecha descendente y tomar los últimos 5
+            const sortedLogs = [...usuarioActual.registros].sort((a, b) => {
+                const [da, ma, ya] = a.fecha.split('/').map(Number);
+                const [db, mb, yb] = b.fecha.split('/').map(Number);
+                const dateA = new Date(ya, ma - 1, da);
+                const dateB = new Date(yb, mb - 1, db);
+                return dateB - dateA;
+            }).slice(0, 5); 
+
+            let html = '';
+            sortedLogs.forEach((log, index) => {
+                // Buscamos el índice original para poder eliminarlo correctamente
+                const originalIndex = usuarioActual.registros.findIndex(r => r.fecha === log.fecha && r.horas === log.horas);
+
+                html += `
+                    <div class="log-entry">
+                        <span class="log-date">${log.fecha}</span>
+                        <span class="log-hours">${log.horas}h</span>
+                        <button class="btn-delete-log" onclick="deleteLog(${originalIndex})">
+                            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zm2.46-7.12l1.41-1.41L12 12.59l2.12-2.12 1.41 1.41L13.41 14l2.12 2.12-1.41 1.41L12 15.41l-2.12 2.12-1.41-1.41L10.59 14l-2.13-2.12zM15.5 4l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </button>
+                    </div>
+                `;
+            });
+            logContainer.innerHTML = html;
+        }
+
+        function deleteLog(index) {
+            if (confirm("¿Estás seguro de que quieres eliminar este registro?")) {
+                // Validación para evitar errores si el índice es -1
+                if (index !== -1 && usuarioActual.registros.length > index) {
+                    usuarioActual.registros.splice(index, 1);
+                    saveUser();
+                    actualizarBarras();
+                    mostrarError("🗑️ Registro eliminado.");
+                } else {
+                     mostrarError("Error: Registro no encontrado.");
+                }
+            }
+        }
+
+        // --- MODAL DE REGISTRO ---
+
+        function abrirModalRegistro() {
+            const m = document.getElementById('modal-registro');
+            m.style.display = 'flex';
+            setTimeout(()=>m.classList.add('open'), 10);
+            document.getElementById('rec-date').value = '';
+            document.getElementById('rec-hours').value = '';
+        }
+
+        function cerrarModalRegistro() {
+            const m = document.getElementById('modal-registro');
+            m.classList.remove('open');
+            setTimeout(()=>m.style.display = 'none', 400);
+        }
+
+        function guardarRegistro() {
+            const fecha = document.getElementById('rec-date').value;
+            const horas = parseInt(document.getElementById('rec-hours').value);
+
+            if (!fecha || !horas) { 
+                mostrarError("Faltan datos (Fecha y/o Horas)."); 
+                return; 
+            }
+            
+            const isAlreadyRegistered = usuarioActual.registros.some(log => log.fecha === fecha);
+
+            if (isAlreadyRegistered) {
+                mostrarError(`Ya existe un registro para la fecha ${fecha}. Solo se permite un registro por día.`);
+                return;
+            }
+            
+            if (horas > usuarioActual.dailyMax) { 
+                mostrarError(`Máximo ${usuarioActual.dailyMax} horas por día.`); 
+                return; 
+            }
+
+            if (!usuarioActual.registros) usuarioActual.registros = [];
+            usuarioActual.registros.push({ fecha: fecha, horas: horas });
+            saveUser();
+            
+            actualizarBarras();
+            cerrarModalRegistro();
+            mostrarError("✅ Registro agregado con éxito.");
+        }
+
+        // --- MODAL DE CONFIRMACIÓN DE CIERRE DE SESIÓN ---
+
+        function logout() {
+            const m = document.getElementById('logout-modal');
+            m.style.display = 'flex';
+            setTimeout(()=>m.classList.add('open'), 10);
+        }
+
+        function cancelLogout() {
+            const m = document.getElementById('logout-modal');
+            m.classList.remove('open');
+            setTimeout(()=>m.style.display = 'none', 400);
+        }
+
+        function confirmLogout() {
+            localStorage.removeItem('nande_user_v2');
+            location.reload(); 
+        }
+
+        // --- PERFIL (DETALLE DE HORAS Y DÍAS) ---
+        function renderProfileScreen() {
+            if (usuarioActual) {
+                const dayMap = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+                
+                document.getElementById('profile-name-display').innerText = `${usuarioActual.nombre} ${usuarioActual.apellido}`;
+                document.getElementById('profile-startdate-display').innerText = usuarioActual.fechaInicio;
+                
+                document.getElementById('profile-hours-daily').innerText = `${usuarioActual.dailyMax}h`;
+                
+                const laborDaysText = usuarioActual.diasLaborales.length > 0
+                    ? usuarioActual.diasLaborales.sort((a, b) => a - b).map(d => dayMap[d]).join(', ')
+                    : 'Ninguno seleccionado';
+                document.getElementById('profile-working-days').innerText = laborDaysText;
+
+                // Asegurar que el toggle refleje el estado actual del modo oscuro
+                const isDark = localStorage.getItem('nande_dark_mode') === 'true';
+                document.getElementById('darkModeToggle').checked = isDark;
+            }
+        }
+
+        // --- NAVEGACIÓN ---
+        function changeScreen(screenId) {
+            const screens = ['home-screen', 'calendar-screen', 'profile-screen'];
+            
+            screens.forEach(id => {
+                const screen = document.getElementById(id);
+                if (screen) {
+                    screen.classList.remove('active');
+                    screen.style.display = 'none'; 
+                }
+            });
+            
+            const targetScreen = document.getElementById(screenId);
+            
+            if (targetScreen) {
+                targetScreen.style.display = 'flex';
+                setTimeout(() => {
+                    targetScreen.classList.add('active');
+                }, 10); 
+            }
+            
+            document.querySelectorAll('.bottom-nav .nav-item').forEach(item => item.classList.remove('active'));
+            
+            const logoCard = document.querySelector('.logo-card');
+            if (screenId === 'home-screen' || screenId === 'calendar-screen' || screenId === 'profile-screen') {
+                logoCard.style.display = 'flex';
+            } else {
+                logoCard.style.display = 'none';
+            }
+
+
+            if (screenId === 'home-screen') {
+                document.querySelector('.bottom-nav .nav-item:nth-child(2)').classList.add('active');
+                actualizarBarras(); 
+            } else if (screenId === 'calendar-screen') {
+                document.querySelector('.bottom-nav .nav-item:nth-child(1)').classList.add('active');
+                renderCal('main'); 
+            } else if (screenId === 'profile-screen') {
+                document.querySelector('.bottom-nav .nav-item:nth-child(3)').classList.add('active');
+                renderProfileScreen(); 
+            }
+
+            document.querySelector('.bottom-nav').style.display = 'flex'; 
+        }
+
+        // --- FUNCIONES DE MODALES ELIMINADAS (openDetailModal, closeDetailModal, generarInforme, cerrarPreview) ---
+        // La lógica de openDetailModal no se puede ejecutar porque el calendario ya no tiene un gestor de eventos en días registrados.
+
+        // --- LÓGICA DE CALENDARIO ---
+        
+        function openDatePicker(idDelInput) {
+            inputDestino = idDelInput; 
+            document.getElementById('dateOverlay').style.display='flex'; 
+            setTimeout(()=>document.getElementById('dateOverlay').classList.add('open'), 10); 
+            renderCal('modal'); 
+        }
+        
+        function closeDatePicker() { 
+            document.getElementById('dateOverlay').classList.remove('open'); 
+            setTimeout(()=>document.getElementById('dateOverlay').style.display='none', 400); 
+        }
+        
+        function confirmDate() { 
+            if(tempDate && inputDestino) {
+                const dia = tempDate.getDate().toString().padStart(2, '0');
+                const mes = (tempDate.getMonth()+1).toString().padStart(2, '0');
+                const anio = tempDate.getFullYear();
+                
+                document.getElementById(inputDestino).value = `${dia}/${mes}/${anio}`;
+                closeDatePicker();
+            } else {
+                mostrarError("Elige fecha");
+            }
+        }
+
+        function changeMonth(d, contexto) {
+            const dateObj = (contexto === 'main') ? calDatePrincipal : calDateRegistro;
+            dateObj.setMonth(dateObj.getMonth() + d);
+            renderCal(contexto);
+        }
+        
+        function renderCal(contexto) {
+            const date = (contexto === 'main') ? calDatePrincipal : calDateRegistro;
+            const gridId = (contexto === 'main') ? 'mainCalendarGrid' : 'calendarGrid';
+            const titleId = (contexto === 'main') ? 'cal-title-view' : 'currentMonthYear';
+
+            document.getElementById(titleId).innerText = `${mNames[date.getMonth()]} ${date.getFullYear()}`;
+            
+            const grid = document.getElementById(gridId);
+            grid.innerHTML = '';
+            
+            ['D','L','M','M','J','V','S'].forEach(d=>{
+                const h=document.createElement('div'); h.innerText=d; h.style.fontSize='12px'; h.style.color='#8e24aa'; h.style.fontWeight='bold'; grid.appendChild(h);
+            });
+            
+            const y=date.getFullYear(), m=date.getMonth();
+            const first=new Date(y,m,1).getDay(), total=new Date(y,m+1,0).getDate();
+            for(let i=0;i<first;i++)grid.appendChild(document.createElement('div'));
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            let fechaLimiteInferior = new Date(0); 
+            let diasLaborales = usuarioActual ? usuarioActual.diasLaborales : [];
+
+            if (usuarioActual && usuarioActual.fechaInicio) {
+                const [diaInicio, mesInicio, anioInicio] = usuarioActual.fechaInicio.split('/').map(Number);
+                fechaLimiteInferior = new Date(anioInicio, mesInicio - 1, diaInicio);
+                fechaLimiteInferior.setHours(0, 0, 0, 0);
+            }
+
+            for(let i=1;i<=total;i++){
+                const d=document.createElement('div'); d.className='cal-day'; d.innerText=i;
+                
+                const dia = String(i).padStart(2, '0');
+                const mes = String(m + 1).padStart(2, '0');
+                const fechaString = `${dia}/${mes}/${y}`;
+
+                const calendarDate = new Date(y, m, i); 
+                calendarDate.setHours(0, 0, 0, 0); 
+                
+                let isFutureDay = false;
+                let isBeforeStart = false;
+                let isAlreadyRegistered = false; 
+                let isNonWorkingDay = false; 
+                let isDateDisabled = false;
+
+                // 3. REGLA: Ya registrado (Aplica a ambos contextos)
+                if (usuarioActual && usuarioActual.registros) {
+                    isAlreadyRegistered = usuarioActual.registros.some(log => log.fecha === fechaString);
+                }
+
+                if (contexto !== 'main') {
+                    // 1. REGLA: No en el futuro
+                    if (calendarDate > today) {
+                        isFutureDay = true;
+                    }
+
+                    // 2. REGLA: No antes del inicio
+                    if (calendarDate < fechaLimiteInferior) {
+                        isBeforeStart = true;
+                    }
+                    
+                    // 4. REGLA: Días no laborales 
+                    const dayOfWeek = calendarDate.getDay();
+                    if (usuarioActual && diasLaborales && diasLaborales.length > 0 && !diasLaborales.includes(dayOfWeek)) {
+                        isNonWorkingDay = true;
+                    }
+                    
+                    isDateDisabled = isFutureDay || isBeforeStart || isAlreadyRegistered || isNonWorkingDay;
+                }
+                
+                if (isDateDisabled) {
+                    d.style.opacity = 0.4;
+                    d.style.pointerEvents = 'none'; 
+                }
+
+                // LÓGICA PARA EL CALENDARIO PRINCIPAL (SÓLO VISUALIZACIÓN)
+                if (contexto === 'main') {
+                    if (isAlreadyRegistered) {
+                        d.classList.add('has-log');
+                        // Anteriormente abría el modal de detalle, ahora no hace nada
+                        d.style.cursor = 'default'; 
+                    } else {
+                        d.style.pointerEvents = 'none';
+                    }
+                } 
+                
+                // Marcar día seleccionado en el modal
+                if (contexto !== 'main' && tempDate && tempDate.getDate()===i && tempDate.getMonth()===m) {
+                    d.classList.add('selected');
+                }
+                
+                // Solo el calendario modal tiene evento onclick para selección de fecha
+                if (contexto !== 'main' && !isDateDisabled) {
+                     d.onclick=()=>{tempDate=new Date(y,m,i); renderCal(contexto);};
+                }
+                grid.appendChild(d);
+            }
+        }
+        
+        // --- SISTEMA DE LOGROS ---
+        function checkAchievements() {
+            if (!usuarioActual) return;
+            
+            const total = usuarioActual.totalHours;
+            const current = usuarioActual.registros.reduce((acc, r) => acc + r.horas, 0);
+            const percent = (current / total) * 100;
+
+            // 1. Bronce: Primer registro
+            if (current > 0) document.getElementById('medal-bronze').classList.add('unlocked');
+            
+            // 2. Plata: 50% completado
+            if (percent >= 50) document.getElementById('medal-silver').classList.add('unlocked');
+            
+            // 3. Oro: 100% completado
+            if (percent >= 100) document.getElementById('medal-gold').classList.add('unlocked');
+
+            // 4. Estrella: Racha de constancia (Ej: 3 registros seguidos o 5 registros totales)
+            if (usuarioActual.registros.length >= 5) document.getElementById('medal-star').classList.add('unlocked');
+        }
+
+        // FUNCIÓN DE DESCARGA DIRECTA DEL PDF (IMPRIMIR FINAL)
+        function imprimirFinal() {
+            if(!usuarioActual) {
+                mostrarError("No hay datos de usuario para generar el informe.");
+                return;
+            }
+
+            // 1. PREPARAR DATOS Y ESTRUCTURA HTML OCULTA
+            const totalHoras = usuarioActual.registros.reduce((acc, r) => acc + r.horas, 0);
+            
+            const logsOrdenados = [...usuarioActual.registros].sort((a, b) => {
+                const [da, ma, ya] = a.fecha.split('/').map(Number);
+                const [db, mb, yb] = b.fecha.split('/').map(Number);
+                return new Date(ya, ma - 1, da) - new Date(yb, mb - 1, db);
+            });
+
+            let htmlContent = `
+                <div style="text-align: center; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px;">
+                    <h1 style="margin:0;">Informe de Pasantía</h1>
+                    <h2 style="margin:2px 0;">${usuarioActual.nombre} ${usuarioActual.apellido}</h2>
+                    <p style="font-size: 10px; color: #666;">Generado vía Ñande Pasantía App</p>
+                </div>
+                
+                <div class="header-info-box">
+                    <p><strong>Fecha de Inicio:</strong> ${usuarioActual.fechaInicio}</p>
+                    <p><strong>Total de Horas Registradas:</strong> ${totalHoras} hrs</p>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th style="width: 25%;">Horas</th> </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            logsOrdenados.forEach(log => {
+                htmlContent += `
+                    <tr>
+                        <td>${log.fecha}</td>
+                        <td>${log.horas} hrs</td>
+                    </tr>
+                `;
+            });
+
+            htmlContent += `
+                    </tbody>
+                </table>
+
+                <div class="preview-signature-box">
+                    <div class="preview-sign">Firma del Alumno</div>
+                    <div class="preview-sign">Firma del Supervisor</div>
+                </div>
+            `;
+            
+            const paperElement = document.getElementById('hidden-paper-a4');
+            paperElement.innerHTML = htmlContent;
+
+            // 2. CALCULAR ESCALADO DINÁMICO (para asegurar que quepa en A4)
+            const rowCount = logsOrdenados.length;
+            let finalScale = 1.0; 
+            
+            if (rowCount > 40 && rowCount <= 60) {
+                finalScale = 0.9; 
+            } else if (rowCount > 60) {
+                finalScale = 0.8; 
+            } 
+
+            // 3. CONFIGURACIÓN DEL PDF
+            // Aplicamos el escalado al elemento oculto ANTES de la conversión
+            paperElement.style.transform = `scale(${finalScale})`;
+            paperElement.style.display = 'block'; // Lo hacemos visible solo para html2canvas (aunque sigue fuera de la vista)
+            
+            const html2canvasScale = 3.0; // Alta resolución
+            const name = `${usuarioActual.nombre}_${usuarioActual.apellido}`.replace(/\s/g, '_');
+            const filename = `Informe_Pasantia_${name}.pdf`;
+
+            const options = {
+                margin: [5, 5, 5, 5], 
+                filename: filename,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { 
+                    scale: html2canvasScale, 
+                    logging: false, 
+                    dpi: 192, 
+                    letterRendering: true 
+                }, 
+                jsPDF: { 
+                    unit: 'mm', 
+                    format: 'a4', 
+                    orientation: 'portrait' 
+                },
+                pagebreak: { 
+                    mode: ['avoid-all', 'css', 'legacy'] 
+                } 
+            };
+            
+            mostrarError("💾 Generando PDF... Esto puede tardar un momento.");
+
+            // 4. GENERAR Y DESCARGAR
+            html2pdf().set(options).from(paperElement).save().then(() => {
+                // 5. LIMPIEZA POST-DESCARGA
+                paperElement.style.transform = 'scale(1.0)';
+                paperElement.style.display = 'none';
+            }).catch(error => {
+                console.error("Error al generar PDF:", error);
+                paperElement.style.transform = 'scale(1.0)';
+                paperElement.style.display = 'none';
+                mostrarError("❌ Error al generar PDF. Intenta de nuevo.");
+            });
+        }
+
+        // --- COPIA DE SEGURIDAD (EXPORTAR/IMPORTAR) ---
+
+        function exportarDatos() {
+            if(!usuarioActual) { mostrarError("No hay datos para exportar"); return; }
+            
+            const dataStr = JSON.stringify(usuarioActual);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `backup_pasantia_${usuarioActual.nombre}_${new Date().toISOString().slice(0,10)}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            mostrarError("✅ Copia de seguridad descargada");
+        }
+
+        function importarDatos(inputElement) {
+            const file = inputElement.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    
+                    // Validación básica para saber si es un archivo de la app
+                    if(json.nombre && json.registros && Array.isArray(json.registros)) {
+                        if(confirm(`Se importarán los datos de: ${json.nombre} ${json.apellido}. Esto reemplazará tus datos actuales. ¿Continuar?`)) {
+                            usuarioActual = json;
+                            saveUser();
+                            location.reload(); // Recargar para aplicar cambios
+                        }
+                    } else {
+                        mostrarError("❌ El archivo no es válido");
+                    }
+                } catch(err) {
+                    mostrarError("❌ Error al leer el archivo");
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+            inputElement.value = ''; // Limpiar input
+        }
+    </script>
+</body>
+</html>
